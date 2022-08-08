@@ -13,7 +13,7 @@ elif [ -f "$HOME/.zshrc" ]; then
 fi
 
 rclinecomment="# git commands"
-rcline="[ -s ~/.git-commands.sh ] && . ~/.git-commands.sh"
+rcline='[ -s "$HOME/.git-commands.sh" ] && . "$HOME/.git-commands.sh"'
 
 if [ ! -z "$rcfile" ]; then
   if grep -Fq "$rcline" "$HOME/$rcfile"; then
