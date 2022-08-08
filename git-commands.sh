@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function git_cmd_err() {
-  echo -e "\e[31merror: $@\e[0m"
+  echo "\033[31merror: $@\033[0m"
 }
 
 # merge fast forward only
@@ -13,7 +13,7 @@ alias remotereset='git fetch origin $(git rev-parse --abbrev-ref HEAD) && git re
 # rename branch
 function grename() {
   if [[ -z "$1" || -z "$2" ]]; then
-    echo "Usage: $0 old_branch new_branch"
+    git_cmd_err "usage: $0 old_branch new_branch"
     return 1
   fi
 
@@ -155,7 +155,7 @@ function rebaseforward() {
 # reset n commits back
 function gitreset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    git_cmd_err "missing number of commits to reset, e.g. gitreset 1"
+    git_cmd_err "usage: $0 num_commits"
     return 1
   fi
   # go back
@@ -163,8 +163,6 @@ function gitreset() {
   # and then unstage
   git reset
 }
-
-unset -f git_cmd_err
 
 # --- Aliases from oh-my-zsh (not comprehensive) ---
 
