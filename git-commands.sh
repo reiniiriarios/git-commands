@@ -7,6 +7,9 @@ function git_cmd_err() {
 # merge fast forward only
 alias gmff="git merge --ff-only"
 
+# reset current branch to remote origin
+alias remotereset='git fetch origin $(git rev-parse --abbrev-ref HEAD) && git reset --hard "origin/$(git rev-parse --abbrev-ref HEAD)"'
+
 # rename branch
 function grename() {
   if [[ -z "$1" || -z "$2" ]]; then
