@@ -21,6 +21,7 @@ if [ ! -z "$rcfile" ]; then
   else
     echo "\n$rclinecomment\n$rcline\n" >> "$HOME/$rcfile"
     echo "\033[32mscript installed in $rcfile\033[0m"
+    . "$HOME/$rcfile"
   fi
 else
   echo "\033[31munable to locate .*rc file to install script"
