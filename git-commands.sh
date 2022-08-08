@@ -115,16 +115,16 @@ function gmffthis() {
 }
 
 # rebase interactively n commits back
-function rebasei() {
+function rebase-i() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    git_cmd_err "missing number of commits to interactively rebase, e.g. rebase 1"
+    git_cmd_err "missing number of commits, e.g. $0 1"
     return 1
   fi
   git rebase -i HEAD~$1
 }
 
 # interactively rebase all commits on current branch
-function rebasebranch() {
+function rebase-branch() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
@@ -142,7 +142,7 @@ function rebasebranch() {
 #               A'--B'--C' current-branch
 #              /
 # D---E---F---G parent
-function rebaseforward() {
+function rebase-forward() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
@@ -152,10 +152,14 @@ function rebaseforward() {
   git rebase origin/$parent
 }
 
+# rebase shortcuts
+alias rebase-c="git rebase --continue"
+alias rebase-a="git rebase --abort"
+
 # reset n commits back
 function gitreset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    git_cmd_err "usage: $0 num_commits"
+    git_cmd_err "missing number of commits, e.g. $0 1"
     return 1
   fi
   # go back
