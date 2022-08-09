@@ -250,9 +250,6 @@ if [ -z "$ZSH" ]; then
   alias gignore='git update-index --assume-unchanged'
   alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
-  alias gk='\gitk --all --branches &!'
-  alias gke='\gitk --all $(git log -g --pretty=%h) &!'
-
   alias gl='git pull'
 
   alias gd='git diff'
