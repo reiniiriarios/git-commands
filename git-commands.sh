@@ -54,27 +54,27 @@ if [ -z "$ZSH" ]; then
     echo develop
   }
 
-  # number of commits ahead from remote
-  function git_commits_ahead() {
-    if git rev-parse --git-dir &>/dev/null; then
-      local commits="$(git rev-list --count @{upstream}..HEAD 2>/dev/null)"
-      if [[ -n "$commits" && "$commits" != 0 ]]; then
-        return $commits
-      fi
-    fi
-  }
-
-  # number of commits behind remote
-  function git_commits_behind() {
-    if git rev-parse --git-dir &>/dev/null; then
-      local commits="$(git rev-list --count HEAD..@{upstream} 2>/dev/null)"
-      if [[ -n "$commits" && "$commits" != 0 ]]; then
-        return $commits
-      fi
-    fi
-  }
-
 fi
+
+# number of commits ahead from remote
+function git_commits_ahead() {
+  if git rev-parse --git-dir &>/dev/null; then
+    local commits="$(git rev-list --count @{upstream}..HEAD 2>/dev/null)"
+    if [[ -n "$commits" && "$commits" != 0 ]]; then
+      return $commits
+    fi
+  fi
+}
+
+# number of commits behind remote
+function git_commits_behind() {
+  if git rev-parse --git-dir &>/dev/null; then
+    local commits="$(git rev-list --count HEAD..@{upstream} 2>/dev/null)"
+    if [[ -n "$commits" && "$commits" != 0 ]]; then
+      return $commits
+    fi
+  fi
+}
 
 # find parent branch
 function gitparent() {
@@ -239,11 +239,11 @@ if [ -z "$ZSH" ]; then
   alias gfg='git ls-files | grep'
 
   alias ggpur='ggu'
-  alias ggpull='git pull origin "$(git_current_branch)"'
-  alias ggpush='git push origin "$(git_current_branch)"'
+  alias ggpull='git pull origin "$(git branch --show-current)"'
+  alias ggpush='git push origin "$(git branch --show-current)"'
 
-  alias ggsup='git branch --set-upstream-to=origin/$(git_current_branch)'
-  alias gpsup='git push --set-upstream origin $(git_current_branch)'
+  alias ggsup='git branch --set-upstream-to=origin/$(git branch --show-current)'
+  alias gpsup='git push --set-upstream origin $(git branch --show-current)'
 
   alias ghh='git help'
 
