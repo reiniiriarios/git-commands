@@ -79,7 +79,7 @@ fi
 # find parent branch
 function gitparent() {
   git show-branch \
-    | sed "s/].*//" \
+    | sed "s/[^a-zA-Z0-9_\-]*].*//" \
     | grep "\*" \
     | grep -v "$(git rev-parse --abbrev-ref HEAD)" \
     | head -n1 \
