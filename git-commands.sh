@@ -78,12 +78,49 @@ function git_commits_behind() {
 
 # find parent branch
 function gitparent() {
-  git show-branch \
-    | sed "s/[^a-zA-Z0-9_\-]*].*//" \
-    | grep "\*" \
-    | grep -v "$(git rev-parse --abbrev-ref HEAD)" \
+  if [ $(git branch --show-current) = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return 1
+  fi
+
+  # git list of parents
+  # there may be more than one parent on a commit when merging with fast-forward
+  # format will be:
+  #    origin/parent-name, parent-name, other-parent
+  local parents=$(git log --decorate --simplify-by-decoration --oneline \
+    | grep -v '(HEAD' \
     | head -n1 \
-    | sed "s/^.*\[//"
+    | sed 's/.* (\(.*\)) .*/\1/' \
+    | sed 's/origin\/[^,]*[, ]*//')
+
+  # take out remote branches and, if there are local branches left, look only at those
+  local localParents=$(echo $parents | sed 's/origin\/[^,]*[, ]*//')
+  if ! [ -z "$localParents" ]; then
+    parents="$localParents"
+  else
+    # otherwise, remove the origin/ part, we don't need that
+    parents=$(echo $parents | sed 's/origin\///')
+  fi
+
+  # look for first likely "important" branch that would be the one we're looking for
+  local main=$(git_main_branch)
+  case "$parents" in
+    *"release"*)
+      local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*release[^,]*\)[, ]*.*$/\1/')"
+      ;;
+    *"dev"*)
+      local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*dev[^,]*\)[, ]*.*$/\1/')"
+      ;;
+    *"$main"*)
+      local branch=$(echo $parents | sed "s/^.*[, ]*\([^ ]*${main}[^,]*\)[, ]*.*$/\1/")
+      ;;
+    *)
+      # if nothing interesting found, assume the first branch in the list
+      local branch="$(echo $parents | sed 's/^\([^ ,]*\)[, ]*.*$/\1/')"
+      ;;
+  esac
+
+  echo $branch
 }
 
 # number of commits from parent branch
@@ -156,6 +193,37 @@ function rebase-forward() {
   git pull origin $parent
   git rebase origin/$parent
 }
+
+# rebase current branch onto main branch
+#       A---B---C current-branch
+#      /
+# D---E---F---G main
+#         ==>>
+#               A'--B'--C' current-branch
+#              /
+# D---E---F---G main
+# ---------------------------------------
+#         A---B current-branch
+#        /
+#       C---D another-branch
+#      /
+# E---F---G main
+#       ==>>
+#           C---D another-branch
+#          /
+#        /  A'--B' current-branch
+#      /   /
+# E---F---G main
+function rebase-on-main() {
+  if [ $(git branch --show-current) = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return 1
+  fi
+  git pull origin $(git_main_branch)
+  git rebase origin/$(git_main_branch)
+}
+alias rebaseonmain='rebase-on-main'
+alias grom='rebase-on-main'
 
 # rebase shortcuts
 alias rebase-c="git rebase --continue"
