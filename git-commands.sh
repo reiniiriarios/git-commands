@@ -205,6 +205,17 @@ function rebase-i() {
   git rebase -i HEAD~$1
 }
 
+function branch-num-commits() {
+  local current=$(git branch --show-current)
+  local parent=$(gitparent 2&>/dev/null)
+  if [ -z $parent ]; then
+    local commits=$(git rev-list --count HEAD)
+  else
+    local commits=$(git rev-list --count HEAD ^$parent)
+  fi
+  echo "\e[33m$commits commits\e[0m on \e[32m$current\e[0m"
+}
+
 # interactively rebase all commits on current branch
 function rebase-branch() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
