@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function git_cmd_err() {
-  echo "\033[31merror: $@\033[0m" 1>&2
+  echo "\e[31merror: $@\e[0m" 1>&2
 }
 
 # merge fast forward only
@@ -247,9 +247,9 @@ function reset-branch() {
     return 1
   fi
   if [ "$commits" -gt "30" ]; then
-    git_cmd_err "Are you... sure you want to reset $commits commits?"
-    git_cmd_err "Run the following if you are:"
-    git_cmd_err "  git reset --soft HEAD~$commits"
+    echo "\e[33mAre you... sure you want to reset $commits commits?\e[0m"
+    echo "\e[33mRun the following if you are:\e[0m"
+    echo "  git reset --soft HEAD~$commits"
     return 1
   fi
   # go back
