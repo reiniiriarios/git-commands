@@ -83,15 +83,56 @@ function gitparent() {
     return 1
   fi
 
+  local mainBranch=$(git_main_branch)
+
+  # first check if the HEAD is concurrent with a major branch
+  # if this is the case, it's likely the branch has no commits yet
+  # in which case the parent is the least primary concurrent branch
+  local thiscommit=$(git log --decorate --simplify-by-decoration --oneline \
+    | grep '(HEAD' \
+    | sed 's/origin\/HEAD//' \
+    | sed 's/HEAD[^,]*//' \
+    | sed 's/^[^(]*(//' \
+    | sed 's/)[^)]*$//')
+
+  # take out remote branches and, if there are local branches left, look only at those
+  local thisLocalParents=$(echo $parents | sed 's/origin\/[^,]*[, ]*//g')
+  if ! [ -z "$thisLocalParents" ]; then
+    thisParents="$thisLocalParents"
+  else
+    # otherwise, remove the origin/ part, we don't need that
+    thisParents=$(echo $thiscommit | sed 's/origin\///g')
+  fi
+  
+  case "$thisParents" in
+    *"release"*)
+      local branch="$(echo $thisParents | sed 's/^.*[, ]*\([^ ]*release[^,]*\)[, ]*.*$/\1/')"
+      ;;
+    *"dev"*)
+      local branch="$(echo $thisParents | sed 's/^.*[, ]*\([^ ]*dev[^,]*\)[, ]*.*$/\1/')"
+      ;;
+    *"$mainBranch"*)
+      local branch=$(echo $thisParents | sed "s/^.*[, ]*\([^ ]*${mainBranch}[^,]*\)[, ]*.*$/\1/")
+      ;;
+  esac
+  if ! [ -z $branch ]; then
+    echo $branch
+    return
+  fi
+
+  # if not concurrent with *release*, *dev* or main, search previous commits
+
   # git list of parents
-  # there may be more than one parent on a commit when merging with fast-forward
+  # there may be more than one parent on a commit
   # format will be:
   #    origin/parent-name, parent-name, other-parent
+  # remove commit at HEAD
+  # only search for commits with branches on them (will have parentheses)
   local parents=$(git log --decorate --simplify-by-decoration --oneline \
     | grep -v '(HEAD' \
+    | grep '(' \
     | head -n1 \
-    | sed 's/.* (\(.*\)) .*/\1/' \
-    | sed 's/origin\/[^,]*[, ]*//')
+    | sed 's/.* (\(.*\)) .*/\1/')
 
   # take out remote branches and, if there are local branches left, look only at those
   local localParents=$(echo $parents | sed 's/origin\/[^,]*[, ]*//')
@@ -103,7 +144,6 @@ function gitparent() {
   fi
 
   # look for first likely "important" branch that would be the one we're looking for
-  local main=$(git_main_branch)
   case "$parents" in
     *"release"*)
       local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*release[^,]*\)[, ]*.*$/\1/')"
@@ -111,8 +151,8 @@ function gitparent() {
     *"dev"*)
       local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*dev[^,]*\)[, ]*.*$/\1/')"
       ;;
-    *"$main"*)
-      local branch=$(echo $parents | sed "s/^.*[, ]*\([^ ]*${main}[^,]*\)[, ]*.*$/\1/")
+    *"$mainBranch"*)
+      local branch=$(echo $parents | sed "s/^.*[, ]*\([^ ]*${mainBranch}[^,]*\)[, ]*.*$/\1/")
       ;;
     *)
       # if nothing interesting found, assume the first branch in the list
@@ -174,6 +214,37 @@ function rebase-branch() {
   local parent=$(gitparent)
   local commits=$(git rev-list --count HEAD ^$parent)
   git rebase -i HEAD~$commits
+}
+
+# reset all commits on branch
+function reset-branch() {
+  local current_branch=$(git branch --show-current)
+  if [ $current_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return 1
+  elif [[ "$current_branch" == *"develop"* ]]; then
+    git_cmd_err "this command doesn't work on a dev branch"
+    return 1
+  elif [[ "$current_branch" == *"release"* ]]; then
+    git_cmd_err "this command doesn't work on a release branch"
+    return 1
+  fi
+  local parent=$(gitparent)
+  local commits=$(git rev-list --count HEAD ^$parent)
+  if [ "$commits" -lt "1" ]; then
+    git_cmd_err "no commits to reset"
+    return 1
+  fi
+  if [ "$commits" -gt "30" ]; then
+    git_cmd_err "Are you... sure you want to reset $commits commits?"
+    git_cmd_err "Run the following if you are:"
+    git_cmd_err "  git reset --soft HEAD~$commits"
+    return 1
+  fi
+  # go back
+  git reset --soft HEAD~$commits
+  # and then unstage
+  git reset
 }
 
 # rebase current branch onto parent branch (for keeping up-to-date)
