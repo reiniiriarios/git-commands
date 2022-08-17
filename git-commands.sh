@@ -275,6 +275,7 @@ function rebase-forward() {
   git pull origin $parent
   git rebase origin/$parent
 }
+alias grf='rebase-forward'
 
 # rebase current branch onto main branch
 #       A---B---C current-branch
