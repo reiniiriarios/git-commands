@@ -120,7 +120,7 @@ function gitparent() {
     return
   fi
 
-  # if not concurrent with *release*, *dev* or main, search previous commits
+  # if not concurrent with *release*, *dev*, or main, search previous commits
 
   # git list of parents
   # there may be more than one parent on a commit
