@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function git_cmd_err() {
-  echo "\033[31merror: $@\033[0m"
+  echo "\033[31merror: $@\033[0m" 1>&2
 }
 
 # merge fast forward only
