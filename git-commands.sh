@@ -324,6 +324,12 @@ function gitreset() {
   git reset
 }
 
+# whether a branch has a remote set
+function branch-has-remote() {
+  remote=$(git config branch.$1.remote)
+  ! [ -z $remote ] && return
+  false
+}
 # --- Aliases from oh-my-zsh (not comprehensive) ---
 
 if [ -z "$ZSH" ]; then
