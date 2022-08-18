@@ -330,6 +330,19 @@ function branch-has-remote() {
   ! [ -z $remote ] && return
   false
 }
+
+# git push, but set upstream if no remote set for branch
+function git-push-with-set-upstream() {
+  if ! branch-has-remote $(git branch --show-current); then
+    local remote=$(git config branch.$(git_main_branch).remote)
+    local current_branch=$(git branch --show-current)
+    git push --set-upstream $remote $current_branch $@
+  else
+    git push $@
+  fi
+}
+alias gp='git-push-with-set-upstream'
+
 # --- Aliases from oh-my-zsh (not comprehensive) ---
 
 if [ -z "$ZSH" ]; then
@@ -439,7 +452,7 @@ if [ -z "$ZSH" ]; then
   alias gmum='git merge upstream/$(git_main_branch)'
   alias gma='git merge --abort'
 
-  alias gp='git push'
+  #alias gp='git push'
   alias gpd='git push --dry-run'
   alias gpf='git push --force-with-lease'
   alias gpf!='git push --force'
