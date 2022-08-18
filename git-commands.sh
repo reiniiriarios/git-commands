@@ -76,100 +76,149 @@ function git_commits_behind() {
   fi
 }
 
-# find parent branch
-function gitparent() {
-  if [ $(git branch --show-current) = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return 1
-  fi
-
-  local mainBranch=$(git_main_branch)
-
-  # first check if the HEAD is concurrent with a major branch
-  # if this is the case, it's likely the branch has no commits yet
-  # in which case the parent is the least primary concurrent branch
-  local thiscommit=$(git log --decorate --simplify-by-decoration --oneline \
-    | grep '(HEAD' \
-    | sed 's/origin\/HEAD//' \
-    | sed 's/HEAD[^,]*//' \
-    | sed 's/^[^(]*(//' \
-    | sed 's/)[^)]*$//')
-
-  # take out remote branches and, if there are local branches left, look only at those
-  local thisLocalParents=$(echo $parents | sed 's/origin\/[^,]*[, ]*//g')
-  if ! [ -z "$thisLocalParents" ]; then
-    thisParents="$thisLocalParents"
+# find parent branch of $1, or current branch if $1 is empty
+#   in the following example, 'release-20' would be returned
+#           E---F---G  current-branch
+#          /
+#         C---D  release-20, feat--something
+#        /
+#   A---B  main
+function find_parent_branch() {
+  # start searching at start_branch
+  if [ -z "$1" ]; then
+    local start_branch=$(git branch --show-current)
   else
-    # otherwise, remove the origin/ part, we don't need that
-    thisParents=$(echo $thiscommit | sed 's/origin\///g')
+    local start_branch=$1
   fi
-  
-  case "$thisParents" in
-    *"release"*)
-      local branch="$(echo $thisParents | sed 's/^.*[, ]*\([^ ]*release[^,]*\)[, ]*.*$/\1/')"
-      ;;
-    *"dev"*)
-      local branch="$(echo $thisParents | sed 's/^.*[, ]*\([^ ]*dev[^,]*\)[, ]*.*$/\1/')"
-      ;;
-    *"$mainBranch"*)
-      local branch=$(echo $thisParents | sed "s/^.*[, ]*\([^ ]*${mainBranch}[^,]*\)[, ]*.*$/\1/")
-      ;;
-  esac
-  if ! [ -z $branch ]; then
-    echo $branch
+
+  # check branch isn't main
+  if [ $start_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command does not work on main"
     return
   fi
 
-  # if not concurrent with *release*, *dev*, or main, search previous commits
+  # get all branches that aren't the current
+  local all_branches=( n$(git rev-parse --symbolic --branches) )
 
-  # git list of parents
-  # there may be more than one parent on a commit
-  # format will be:
-  #    origin/parent-name, parent-name, other-parent
-  # remove commit at HEAD
-  # only search for commits with branches on them (will have parentheses)
-  local parents=$(git log --decorate --simplify-by-decoration --oneline \
-    | grep -v '(HEAD' \
-    | grep '(' \
-    | head -n1 \
-    | sed 's/.* (\(.*\)) .*/\1/')
+  # only look at branches that match these regexes
+  local -a regexes=(
+    "^$(git_main_branch)$" \
+    "^dev.*$" \
+    "^release.*$" 
+  )
 
-  # take out remote branches and, if there are local branches left, look only at those
-  local localParents=$(echo $parents | sed 's/origin\/[^,]*[, ]*//')
-  if ! [ -z "$localParents" ]; then
-    parents="$localParents"
-  else
-    # otherwise, remove the origin/ part, we don't need that
-    parents=$(echo $parents | sed 's/origin\///')
+  # filter branches by regexes
+  local -a candidate_branches=()
+  local -A branches_found
+  for branch in $all_branches; do
+    for regex in $regexes; do
+      if [[ $branch != $start_branch && $branch =~ $regex && -z "${branches_found[$branch]}" ]]; then
+        candidate_branches+=( "$branch" )
+        # logging each in branches_found prevents duplicates
+        branches_found[$branch]=1
+      fi
+    done
+  done
+
+  # `git show-branch` cannot show more than 29 branches and commits at a time
+  local max_branches_returned=28
+  local num_branches_left=${#candidate_branches[@]}
+  local last_count
+
+  # do while
+  while : ; do
+    local -a branches_to_check=( "${candidate_branches[@]}" )
+    local -a branches_narrowed=()
+
+    while [[ ${#branches_to_check[@]} -gt 0 ]]; do
+      # slice remaining branches to check to the max we can check at once
+      local -a check_branches=( "${branches_to_check[@]:0:$max_branches_returned}" )
+      local num_check_branches=${#check_branches[@]}
+
+      # create a map index of commits to branches
+      #   the left column in `git show-branch` maps to the list of branches in the header, denoting
+      #   whether the commit is on that branch by a '+' or '*'
+      #   >> show branches we want to check in topographical order
+      #   -> cut the header list out of the result
+      #   -> remove everything after the symbols
+      #   -> replace ' ' with '_'
+      #   -> replace '*' with '+'
+      #   -> limit to lines with '_' <= 1
+      #   -> get the first line
+      #   -> split each character to its own line
+      local map=( $(git show-branch --topo-order "${check_branches[@]}" "$start_branch" \
+                      | tail -n +$(($num_check_branches+3)) \
+                      | sed "s/ \[.*$//" \
+                      | sed "s/ /_/g" \
+                      | sed "s/*/+/g" \
+                      | egrep '^_*[^_].*[^_]$' \
+                      | head -n1 \
+                      | sed 's/\(.\)/\1\n/g'
+                ) )
+
+      # given the following list of potential branches
+      #   main release-30
+      # and given the following result from `git show-branch`
+      # ----------------------------------------
+      # ! [main] main commit
+      #  ! [release-20] release commit 2
+      #   * [chore--something] chore commit 2
+      # ---
+      # +   [main] main commit
+      #  +  [release-20] release commit 2
+      #   * [chore--something] chore commit 2
+      #   * [chore--something^] chore commit
+      #  +* [release-20^] release commit
+      # ++* [main^] test
+      # ----------------------------------------
+      # the resulting map _++ is derived from the following line
+      #  +* [release-20^] release commit
+      # this maps to the header in the result, as
+      #   _  0  main
+      #   +  1  release-20
+      #   +  1
+      # narrowing main out of the candidate list
+
+      # loop through the branches, narrowing the list by whether it is in the map
+      local i=1
+      for branch in "${check_branches[@]}"; do
+        if [[ "${map[$i]}" == "+" ]]; then
+          branches_narrowed+=( $branch )
+        fi
+        ((i=i+1))
+      done
+
+      # cut the branches we just checked out of the remaining list
+      branches_to_check=( "${branches_to_check[@]:$max_branches_returned}" )
+    done
+
+    # set candidate branches to the list we've just narrowed
+    last_count=$count
+    candidate_branches=( "${branches_narrowed[@]}" )
+    count=${#candidate_branches[@]}
+
+    # if we have no more branches to check, we're done
+    [[ $max_branches_returned -lt $num_branches_left && $num_branches_left -lt $last_count ]] || break
+  done
+
+  # check if we narrowed to a single result
+  if [[ ${#candidate_branches[@]} -gt 1 ]]; then
+    git_cmd_err "unable to narrow parent branch down from the following:"
+    git_cmd_err "  ${candidate_branches[@]}"
+    return
   fi
 
-  # look for first likely "important" branch that would be the one we're looking for
-  case "$parents" in
-    *"release"*)
-      local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*release[^,]*\)[, ]*.*$/\1/')"
-      ;;
-    *"dev"*)
-      local branch="$(echo $parents | sed 's/^.*[, ]*\([^ ]*dev[^,]*\)[, ]*.*$/\1/')"
-      ;;
-    *"$mainBranch"*)
-      local branch=$(echo $parents | sed "s/^.*[, ]*\([^ ]*${mainBranch}[^,]*\)[, ]*.*$/\1/")
-      ;;
-    *)
-      # if nothing interesting found, assume the first branch in the list
-      local branch="$(echo $parents | sed 's/^\([^ ,]*\)[, ]*.*$/\1/')"
-      ;;
-  esac
-
-  echo $branch
+  # we did it!
+  echo "${candidate_branches[@]}"
 }
 
-# number of commits from parent branch
+# number of commits from parent branch based on find_parent_branch()
 function commits_from_parent() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(gitparent)
+  local parent=$(find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   if [[ -n "$commits" && "$commits" != 0 ]]; then
     return $commits
@@ -205,9 +254,10 @@ function rebase-i() {
   git rebase -i HEAD~$1
 }
 
+# show the number of commits on a branch based on find_parent_branch()
 function branch-num-commits() {
   local current=$(git branch --show-current)
-  local parent=$(gitparent 2&>/dev/null)
+  local parent=$(find_parent_branch 2&>/dev/null)
   if [ -z $parent ]; then
     local commits=$(git rev-list --count HEAD)
   else
@@ -222,7 +272,7 @@ function rebase-branch() {
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(gitparent)
+  local parent=$(find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   git rebase -i HEAD~$commits
 }
@@ -240,8 +290,10 @@ function reset-branch() {
     git_cmd_err "this command doesn't work on a release branch"
     return 1
   fi
-  local parent=$(gitparent)
+
+  local parent=$(find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
+
   if [ "$commits" -lt "1" ]; then
     git_cmd_err "no commits to reset"
     return 1
@@ -252,13 +304,14 @@ function reset-branch() {
     echo "  git reset --soft HEAD~$commits"
     return 1
   fi
+
   # go back
   git reset --soft HEAD~$commits
   # and then unstage
   git reset
 }
 
-# rebase current branch onto parent branch (for keeping up-to-date)
+# rebase current branch onto parent branch based on find_parent_branch()
 #       A---B---C current-branch
 #      /
 # D---E---F---G parent
@@ -271,7 +324,7 @@ function rebase-forward() {
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(gitparent)
+  local parent=$(find_parent_branch)
   git pull origin $parent
   git rebase origin/$parent
 }
