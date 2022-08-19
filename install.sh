@@ -2,8 +2,25 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-printf "\e[32mlinking file\e[0m\n"
-ln -sfn "$SCRIPT_DIR/git-commands.sh" "$HOME/.git-commands.sh"
+# windows
+if [ -n "$WINDIR" ]; then
+  if ! ls -al "$HOME" | grep .git-commands.sh | grep -q ^l; then
+    printf "\e[32mlinking file\e[0m\n"
+    HOME_WIN=$( echo $HOME | sed -E 's#^/(.{1})#\1:#' | sed 's#/#\\#g' )
+    SCRIPT_DIR_WIN=$( echo $SCRIPT_DIR | sed -E 's#^/(.{1})#\1:#' | sed 's#/#\\#g' )
+    cmd <<< 'mklink "'$HOME_WIN'\\.git-commands.sh" "'$SCRIPT_DIR_WIN'\\git-commands.sh"' >/dev/null
+  else
+    printf "\e[36msymlink already exists\e[0m\n"
+    printf "  $HOME/.git-commands.sh\n"
+  fi
+# otherwise
+elif ! [ -h "$HOME/.git-commands.sh" ]; then
+  printf "\e[32mlinking file\e[0m\n"
+  ln -sf "$SCRIPT_DIR/git-commands.sh" "$HOME/.git-commands.sh"
+else
+  printf "\e[36msymlink already exists\e[0m\n"
+  printf "  $HOME/.git-commands.sh\n"
+fi
 
 rcfile=
 if [ -f "$HOME/.bashrc" ]; then
