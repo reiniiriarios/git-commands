@@ -37,11 +37,27 @@ function git_cmd_branch_protection_main() {
   fi
 }
 
-# merge fast forward only
-alias gmff="git merge --ff-only"
-
 # reset current branch to remote origin
-alias remotereset='git fetch origin $(git rev-parse --abbrev-ref HEAD) && git reset --hard "origin/$(git rev-parse --abbrev-ref HEAD)"'
+function git_remote_reset() {
+  if [ -z "$1" ]; then
+    local branch=$(git branch --show-current)
+  else
+    local branch=$1
+    if ! git rev-parse --quiet --verify $branch; then
+      git_cmd_err "branch $branch not found"
+      return
+    fi
+  fi
+
+  if ! git_branch_has_remote $branch; then
+    git_cmd_err "no remote found for $branch"
+    return
+  fi
+  local remote=$(git config branch.$branch.remote)
+
+  git fetch $remote $branch
+  git reset --hard "$remote/$branch"
+}
 
 # number of commits ahead from remote
 function git_commits_ahead() {
@@ -227,23 +243,31 @@ function git_commits_from_parent() {
   fi
 }
 
-# force push to origin with branch protection
+# force push to remote with branch protection
 function git_force_push() {
   local current_branch=$(git branch --show-current)
   if [ $current_branch = $(git_main_branch) ]; then
     git_cmd_err "cannot force push to main"
     return
   fi
-  git push origin $current_branch --force-with-lease
+  local remote=$(git config branch.$current_branch.remote)
+  git push $remote $current_branch --force-with-lease
 }
 alias gfp='git_force_push'
 alias gpf='git_force_push'
 
-# merge fast-forward only - current branch with main
+# switch to parent branch
+alias gswp='git switch $(git_find_parent_branch)'
+
+# merge fast forward only
+alias gmff="git merge --ff-only"
+
+# merge fast-forward only - current branch with git_find_parent_branch()
 function git_merge_ff_this() {
   local branch_to_merge=$(git branch --show-current)
+  local parent = $(git_find_parent_branch)
   if [ $branch_to_merge ]; then
-    git checkout $(git_main_branch)
+    git checkout $parent
     git merge --ff-only $branch_to_merge
   fi
 }
@@ -332,8 +356,9 @@ function git_rebase_forward() {
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
-  git pull origin $parent
-  git rebase origin/$parent
+  local remote=$(git config branch.$parent.remote)
+  git pull $remote $parent
+  git rebase $remote/$parent
 }
 alias grf='git_rebase_forward'
 alias grop='git_rebase_forward'
@@ -361,8 +386,9 @@ alias grop='git_rebase_forward'
 function git_rebase_on_main() {
   git_cmd_branch_protection_main || return
 
-  git pull origin $(git_main_branch)
-  git rebase origin/$(git_main_branch)
+  local remote=$(git config branch.$(git_main_branch).remote)
+  git pull $remote $(git_main_branch)
+  git rebase $remote/$(git_main_branch)
 }
 alias grom='git_rebase_on_main'
 
@@ -387,7 +413,7 @@ alias gunwip='git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1'
 
 # whether a branch has a remote set
 function git_branch_has_remote() {
-  remote=$(git config branch.$1.remote)
+  local remote=$(git config branch.$1.remote)
   ! [ -z $remote ] && return
   false
 }
