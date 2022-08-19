@@ -386,6 +386,9 @@ function git_reset() {
 }
 alias grn='git_reset'
 
+# reset last commit if message contains 'WIP'
+alias gunwip='git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1'
+
 # whether a branch has a remote set
 function git_branch_has_remote() {
   remote=$(git config branch.$1.remote)
@@ -568,8 +571,6 @@ if [ -z "$ZSH" ]; then
   alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
 
   alias gunignore='git update-index --no-assume-unchanged'
-
-  alias gunwip='git log -n 1 | grep -q -c "\-\-wip\-\-" && git reset HEAD~1'
 
   alias gup='git pull --rebase'
   alias gupv='git pull --rebase -v'
