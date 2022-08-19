@@ -55,6 +55,15 @@ if [ -z "$ZSH" ]; then
     echo develop
   }
 
+  # git pull origin
+  function ggl() {
+    if ! [ -z "$1" ]; then
+      git pull origin "$1"
+    else
+      git pull origin "$(git rev-parse --abbrev-ref HEAD)"
+    fi
+  }
+
 fi
 
 # err function to protect these branches, to be called by other functions
@@ -421,16 +430,11 @@ alias gp='git_push_with_set_upstream'
 # --- Aliases from oh-my-zsh (not comprehensive) ---
 
 if [ -z "$ZSH" ]; then
-  alias g='git'
-
   alias ga='git add'
   alias gaa='git add --all'
   alias gapa='git add --patch'
   alias gau='git add --update'
   alias gav='git add --verbose'
-
-  alias gap='git apply'
-  alias gapt='git apply --3way'
 
   alias gcb='git checkout -b'
   alias gcm='git checkout $(git_main_branch)'
@@ -440,9 +444,10 @@ if [ -z "$ZSH" ]; then
   alias gba='git branch -a'
   alias gbd='git branch -d'
   alias gbD='git branch -D'
-  alias gbl='git blame -b -w'
   alias gbnm='git branch --no-merged'
   alias gbr='git branch --remote'
+
+  alias gbl='git blame -b -w'
 
   alias gbs='git bisect'
   alias gbsb='git bisect bad'
@@ -469,8 +474,6 @@ if [ -z "$ZSH" ]; then
   alias gcf='git config --list'
 
   alias gcl='git clone --recurse-submodules'
-  alias gclean='git clean -id'
-  alias gpristine='git reset --hard && git clean -dffx'
 
   alias gcount='git shortlog -sn'
 
@@ -488,6 +491,7 @@ if [ -z "$ZSH" ]; then
   alias ggpush='git push origin "$(git branch --show-current)"'
 
   alias gignore='git update-index --assume-unchanged'
+  alias gunignore='git update-index --no-assume-unchanged'
   alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
   alias gl='git pull'
@@ -495,11 +499,11 @@ if [ -z "$ZSH" ]; then
   alias gd='git diff'
   alias gdca='git diff --cached'
   alias gdcw='git diff --cached --word-diff'
-  alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
   alias gds='git diff --staged'
-  alias gdt='git diff-tree --no-commit-id --name-only -r'
   alias gdup='git diff @{upstream}'
   alias gdw='git diff --word-diff'
+
+  alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
 
   alias glg='git log --stat'
   alias glgp='git log --stat -p'
@@ -517,27 +521,23 @@ if [ -z "$ZSH" ]; then
 
   alias gm='git merge'
   alias gmom='git merge origin/$(git_main_branch)'
-  alias gmtl='git mergetool --no-prompt'
-  alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
   alias gmum='git merge upstream/$(git_main_branch)'
   alias gma='git merge --abort'
+
+  alias gmtl='git mergetool --no-prompt'
+  alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
 
   #alias gp='git push'
   alias gpd='git push --dry-run'
   # alias gpf='git push --force-with-lease'
-  alias gpf!='git push --force'
   alias gpoat='git push origin --all && git push origin --tags'
-  alias gpr='git pull --rebase'
   alias gpu='git push upstream'
   alias gpv='git push -v'
 
   alias grb='git rebase'
   alias grba='git rebase --abort'
   alias grbc='git rebase --continue'
-  alias grbd='git rebase $(git_develop_branch)'
   alias grbi='git rebase -i'
-  alias grbm='git rebase $(git_main_branch)'
-  alias grbom='git rebase origin/$(git_main_branch)'
   alias grbo='git rebase --onto'
   alias grbs='git rebase --skip'
 
@@ -563,7 +563,7 @@ if [ -z "$ZSH" ]; then
   alias gsu='git submodule update'
 
   alias gsta='git stash push'
-  alias gstu='gsta --include-untracked'
+  alias gstu='git stash push --include-untracked'
   alias gstaa='git stash apply'
   alias gstc='git stash clear'
   alias gstd='git stash drop'
@@ -580,8 +580,7 @@ if [ -z "$ZSH" ]; then
   alias gtv='git tag | sort -V'
   alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
 
-  alias gunignore='git update-index --no-assume-unchanged'
-
+  alias gpr='git pull --rebase'
   alias gup='git pull --rebase'
   alias gupv='git pull --rebase -v'
   alias gupa='git pull --rebase --autostash'
@@ -591,10 +590,4 @@ if [ -z "$ZSH" ]; then
   alias glum='git pull upstream $(git_main_branch)'
 
   alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
-
-  alias gam='git am'
-  alias gamc='git am --continue'
-  alias gams='git am --skip'
-  alias gama='git am --abort'
-  alias gamscp='git am --show-current-patch'
 fi
