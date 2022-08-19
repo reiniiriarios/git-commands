@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function git_cmd_err() {
-  echo "\e[31merror: $@\e[0m" 1>&2
+  printf "\e[31merror: $@\e[0m\n" 1>&2
 }
 
 # merge fast forward only
@@ -98,7 +98,7 @@ function find_parent_branch() {
   fi
 
   # get all branches that aren't the current
-  local all_branches=( n$(git rev-parse --symbolic --branches) )
+  local all_branches=( $(git rev-parse --symbolic --branches) )
 
   # only look at branches that match these regexes
   local -a regexes=(
@@ -263,7 +263,7 @@ function branch-num-commits() {
   else
     local commits=$(git rev-list --count HEAD ^$parent)
   fi
-  echo "\e[33m$commits commits\e[0m on \e[32m$current\e[0m"
+  printf "\e[33m$commits commits\e[0m on \e[32m$current\e[0m\n"
 }
 
 # interactively rebase all commits on current branch
@@ -299,9 +299,9 @@ function reset-branch() {
     return 1
   fi
   if [ "$commits" -gt "30" ]; then
-    echo "\e[33mAre you... sure you want to reset $commits commits?\e[0m"
-    echo "\e[33mRun the following if you are:\e[0m"
-    echo "  git reset --soft HEAD~$commits"
+    printf "\e[33mAre you... sure you want to reset $commits commits?\e[0m\n"
+    printf "\e[33mRun the following if you are:\e[0m\n"
+    printf "  git reset --soft HEAD~$commits\n"
     return 1
   fi
 
