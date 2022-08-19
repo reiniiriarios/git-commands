@@ -369,10 +369,6 @@ function git_rebase_on_main() {
 }
 alias grom='git_rebase_on_main'
 
-# rebase shortcuts
-alias grb-c="git rebase --continue"
-alias grb-a="git rebase --abort"
-
 # reset n commits back
 function git_reset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
