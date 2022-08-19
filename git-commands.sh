@@ -374,7 +374,7 @@ alias gp='git_push_with_set_upstream'
 
 # --- Functions and aliases from oh-my-zsh (not comprehensive) ---
 
-if [ -z "$ZSH" ]; then
+if ! [ -d ~/.oh-my-zsh ]; then
 
   # rename branch
   function grename() {
@@ -397,7 +397,7 @@ if [ -z "$ZSH" ]; then
     local ref
     for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
       if command git show-ref -q --verify $ref; then
-        echo ${ref:t}
+        echo $ref | cut -d '/' -f3
         return
       fi
     done
