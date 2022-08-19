@@ -5,67 +5,6 @@ function git_cmd_err() {
   false
 }
 
-# merge fast forward only
-alias gmff="git merge --ff-only"
-
-# reset current branch to remote origin
-alias remotereset='git fetch origin $(git rev-parse --abbrev-ref HEAD) && git reset --hard "origin/$(git rev-parse --abbrev-ref HEAD)"'
-
-# these come from oh-my-zsh
-if [ -z "$ZSH" ]; then
-
-  # rename branch
-  function grename() {
-    if [[ -z "$1" || -z "$2" ]]; then
-      git_cmd_err "usage: $0 old_branch new_branch"
-      return
-    fi
-
-    # Rename branch locally
-    git branch -m "$1" "$2"
-    # Rename branch in origin remote
-    if git push origin :"$1"; then
-      git push --set-upstream origin "$2"
-    fi
-  }
-
-  # get name of main branch
-  function git_main_branch() {
-    command git rev-parse --git-dir &>/dev/null || return
-    local ref
-    for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
-      if command git show-ref -q --verify $ref; then
-        echo ${ref:t}
-        return
-      fi
-    done
-    echo master
-  }
-
-  # get name of dev branch
-  function git_develop_branch() {
-    command git rev-parse --git-dir &>/dev/null || return
-    local branch
-    for branch in dev devel development; do
-      if command git show-ref -q --verify refs/heads/$branch; then
-        echo $branch
-        return
-      fi
-    done
-    echo develop
-  }
-
-  # git pull origin
-  function ggl() {
-    if ! [ -z "$1" ]; then
-      git pull origin "$1"
-    else
-      git pull origin "$(git rev-parse --abbrev-ref HEAD)"
-    fi
-  }
-
-fi
-
 # err function to protect these branches, to be called by other functions
 function git_cmd_branch_protection() {
   if [ -z "$1" ]; then
@@ -97,6 +36,12 @@ function git_cmd_branch_protection_main() {
     return
   fi
 }
+
+# merge fast forward only
+alias gmff="git merge --ff-only"
+
+# reset current branch to remote origin
+alias remotereset='git fetch origin $(git rev-parse --abbrev-ref HEAD) && git reset --hard "origin/$(git rev-parse --abbrev-ref HEAD)"'
 
 # number of commits ahead from remote
 function git_commits_ahead() {
@@ -427,9 +372,60 @@ function git_push_with_set_upstream() {
 }
 alias gp='git_push_with_set_upstream'
 
-# --- Aliases from oh-my-zsh (not comprehensive) ---
+# --- Functions and aliases from oh-my-zsh (not comprehensive) ---
 
 if [ -z "$ZSH" ]; then
+
+  # rename branch
+  function grename() {
+    if [[ -z "$1" || -z "$2" ]]; then
+      git_cmd_err "usage: $0 old_branch new_branch"
+      return
+    fi
+
+    # Rename branch locally
+    git branch -m "$1" "$2"
+    # Rename branch in origin remote
+    if git push origin :"$1"; then
+      git push --set-upstream origin "$2"
+    fi
+  }
+
+  # get name of main branch
+  function git_main_branch() {
+    command git rev-parse --git-dir &>/dev/null || return
+    local ref
+    for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
+      if command git show-ref -q --verify $ref; then
+        echo ${ref:t}
+        return
+      fi
+    done
+    echo master
+  }
+
+  # get name of dev branch
+  function git_develop_branch() {
+    command git rev-parse --git-dir &>/dev/null || return
+    local branch
+    for branch in dev devel development; do
+      if command git show-ref -q --verify refs/heads/$branch; then
+        echo $branch
+        return
+      fi
+    done
+    echo develop
+  }
+
+  # git pull origin
+  function ggl() {
+    if ! [ -z "$1" ]; then
+      git pull origin "$1"
+    else
+      git pull origin "$(git rev-parse --abbrev-ref HEAD)"
+    fi
+  }
+
   alias ga='git add'
   alias gaa='git add --all'
   alias gapa='git add --patch'
