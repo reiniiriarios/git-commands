@@ -296,6 +296,18 @@ alias grsbranch='git_reset_branch'
 #               A'--B'--C' current-branch
 #              /
 # D---E---F---G parent
+# ---------------------------------------
+#         A---B current-branch
+#        /
+#       C---D another-branch
+#      /
+# E---F---G main
+#       ==>>
+#             A---B current-branch
+#            /
+#       C---D another-branch
+#      /
+# E---F---G main
 function git_rebase_forward() {
   git_cmd_branch_protection || return
 
