@@ -57,6 +57,38 @@ if [ -z "$ZSH" ]; then
 
 fi
 
+# err function to protect these branches, to be called by other functions
+function git_cmd_branch_protection() {
+  if [ -z "$1" ]; then
+    local check_branch=$(git branch --show-current)
+  else
+    local check_branch=$1
+  fi
+  if [ $check_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return
+  elif [[ "$check_branch" == *"develop"* ]]; then
+    git_cmd_err "this command doesn't work on a dev branch"
+    return
+  elif [[ "$check_branch" == *"release"* ]]; then
+    git_cmd_err "this command doesn't work on a release branch"
+    return
+  fi
+}
+
+# err function to protect main, to be called by other functions
+function git_cmd_branch_protection_main() {
+  if [ -z "$1" ]; then
+    local check_branch=$(git branch --show-current)
+  else
+    local check_branch=$1
+  fi
+  if [ $check_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return
+  fi
+}
+
 # number of commits ahead from remote
 function git_commits_ahead() {
   if git rev-parse --git-dir &>/dev/null; then
@@ -93,10 +125,7 @@ function git_find_parent_branch() {
   fi
 
   # check branch isn't main
-  if [ $start_branch = $(git_main_branch) ]; then
-    git_cmd_err "this command does not work on main"
-    return
-  fi
+  git_cmd_branch_protection_main $start_branch
 
   # get all branches that aren't the current
   local all_branches=( $(git rev-parse --symbolic --branches) )
@@ -215,10 +244,8 @@ function git_find_parent_branch() {
 
 # number of commits from parent branch based on git_find_parent_branch()
 function git_commits_from_parent() {
-  if [ $(git branch --show-current) = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  fi
+  git_cmd_branch_protection_main || return
+
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   if [[ -n "$commits" && "$commits" != 0 ]]; then
@@ -273,10 +300,8 @@ alias gbcount='git_branch_num_commits'
 
 # interactively rebase all commits on current branch
 function git_rebase_branch() {
-  if [ $(git branch --show-current) = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  fi
+  git_cmd_branch_protection || return
+  
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   git rebase -i HEAD~$commits
@@ -286,17 +311,7 @@ alias grbbranch='git_rebase_branch'
 
 # reset all commits on branch
 function git_reset_branch() {
-  local current_branch=$(git branch --show-current)
-  if [ $current_branch = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  elif [[ "$current_branch" == *"develop"* ]]; then
-    git_cmd_err "this command doesn't work on a dev branch"
-    return
-  elif [[ "$current_branch" == *"release"* ]]; then
-    git_cmd_err "this command doesn't work on a release branch"
-    return
-  fi
+  git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
@@ -328,10 +343,8 @@ alias grsbranch='git_reset_branch'
 #              /
 # D---E---F---G parent
 function git_rebase_forward() {
-  if [ $(git branch --show-current) = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  fi
+  git_cmd_branch_protection || return
+
   local parent=$(git_find_parent_branch)
   git pull origin $parent
   git rebase origin/$parent
@@ -360,10 +373,8 @@ alias grop='git_rebase_forward'
 #      /   /
 # E---F---G main
 function git_rebase_on_main() {
-  if [ $(git branch --show-current) = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  fi
+  git_cmd_branch_protection_main || return
+
   git pull origin $(git_main_branch)
   git rebase origin/$(git_main_branch)
 }
