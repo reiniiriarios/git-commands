@@ -393,6 +393,9 @@ function git_reset() {
 }
 alias grn='git_reset'
 
+# add wip commit
+alias gwip='git add -A; git commit --no-verify -m "WIP"'
+
 # reset last commit if message contains 'WIP'
 alias gunwip='git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1'
 
@@ -589,12 +592,9 @@ if [ -z "$ZSH" ]; then
 
   alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
 
-  alias gwip='git add -A; git rm $(git ls-files --deleted) 2> /dev/null; git commit --no-verify --no-gpg-sign -m "--wip-- [skip ci]"'
-
   alias gam='git am'
   alias gamc='git am --continue'
   alias gams='git am --skip'
   alias gama='git am --abort'
   alias gamscp='git am --show-current-patch'
-
 fi
