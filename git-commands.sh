@@ -83,7 +83,7 @@ function git_commits_behind() {
 #         C---D  release-20, feat--something
 #        /
 #   A---B  main
-function find_parent_branch() {
+function git_find_parent_branch() {
   # start searching at start_branch
   if [ -z "$1" ]; then
     local start_branch=$(git branch --show-current)
@@ -212,13 +212,13 @@ function find_parent_branch() {
   echo "${candidate_branches[@]}"
 }
 
-# number of commits from parent branch based on find_parent_branch()
-function commits_from_parent() {
+# number of commits from parent branch based on git_find_parent_branch()
+function git_commits_from_parent() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(find_parent_branch)
+  local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   if [[ -n "$commits" && "$commits" != 0 ]]; then
     return $commits
@@ -226,7 +226,7 @@ function commits_from_parent() {
 }
 
 # force push to origin with branch protection
-function gitforcepush() {
+function git_force_push() {
   local current_branch=$(git branch --show-current)
   if [ $current_branch = $(git_main_branch) ]; then
     git_cmd_err "cannot force push to main"
@@ -234,30 +234,32 @@ function gitforcepush() {
   fi
   git push origin $current_branch --force-with-lease
 }
-alias gfp=gitforcepush
+alias gfp='git_force_push'
 
 # merge fast-forward only - current branch with main
-function gmffthis() {
+function git_merge_ff_this() {
   local branch_to_merge=$(git branch --show-current)
   if [ $branch_to_merge ]; then
     git checkout $(git_main_branch)
     git merge --ff-only $branch_to_merge
   fi
 }
+alias gmffthis='git_merge_ff_this'
 
 # rebase interactively n commits back
-function rebase-i() {
+function git_rebase_n_commits() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits, e.g. $0 1"
     return 1
   fi
   git rebase -i HEAD~$1
 }
+alias grbn='git_rebase_n_commits'
 
-# show the number of commits on a branch based on find_parent_branch()
-function branch-num-commits() {
+# show the number of commits on a branch based on git_find_parent_branch()
+function git_branch_num_commits() {
   local current=$(git branch --show-current)
-  local parent=$(find_parent_branch 2&>/dev/null)
+  local parent=$(git_find_parent_branch 2&>/dev/null)
   if [ -z $parent ]; then
     local commits=$(git rev-list --count HEAD)
   else
@@ -265,20 +267,23 @@ function branch-num-commits() {
   fi
   printf "\e[33m$commits commits\e[0m on \e[32m$current\e[0m\n"
 }
+alias gbcount='git_branch_num_commits'
 
 # interactively rebase all commits on current branch
-function rebase-branch() {
+function git_rebase_branch() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(find_parent_branch)
+  local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   git rebase -i HEAD~$commits
 }
+alias grbranch='git_rebase_branch'
+alias grbbranch='git_rebase_branch'
 
 # reset all commits on branch
-function reset-branch() {
+function git_reset_branch() {
   local current_branch=$(git branch --show-current)
   if [ $current_branch = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
@@ -291,7 +296,7 @@ function reset-branch() {
     return 1
   fi
 
-  local parent=$(find_parent_branch)
+  local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
 
   if [ "$commits" -lt "1" ]; then
@@ -310,8 +315,9 @@ function reset-branch() {
   # and then unstage
   git reset
 }
+alias grsbranch='git_reset_branch'
 
-# rebase current branch onto parent branch based on find_parent_branch()
+# rebase current branch onto parent branch based on git_find_parent_branch()
 #       A---B---C current-branch
 #      /
 # D---E---F---G parent
@@ -319,16 +325,17 @@ function reset-branch() {
 #               A'--B'--C' current-branch
 #              /
 # D---E---F---G parent
-function rebase-forward() {
+function git_rebase_forward() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
   fi
-  local parent=$(find_parent_branch)
+  local parent=$(git_find_parent_branch)
   git pull origin $parent
   git rebase origin/$parent
 }
-alias grf='rebase-forward'
+alias grf='git_rebase_forward'
+alias grop='git_rebase_forward'
 
 # rebase current branch onto main branch
 #       A---B---C current-branch
@@ -350,7 +357,7 @@ alias grf='rebase-forward'
 #        /  A'--B' current-branch
 #      /   /
 # E---F---G main
-function rebase-on-main() {
+function git_rebase_on_main() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return 1
@@ -358,15 +365,14 @@ function rebase-on-main() {
   git pull origin $(git_main_branch)
   git rebase origin/$(git_main_branch)
 }
-alias rebaseonmain='rebase-on-main'
-alias grom='rebase-on-main'
+alias grom='git_rebase_on_main'
 
 # rebase shortcuts
-alias rebase-c="git rebase --continue"
-alias rebase-a="git rebase --abort"
+alias grb-c="git rebase --continue"
+alias grb-a="git rebase --abort"
 
 # reset n commits back
-function gitreset() {
+function git_reset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits, e.g. $0 1"
     return 1
@@ -376,17 +382,18 @@ function gitreset() {
   # and then unstage
   git reset
 }
+alias grn='git_reset'
 
 # whether a branch has a remote set
-function branch-has-remote() {
+function git_branch_has_remote() {
   remote=$(git config branch.$1.remote)
   ! [ -z $remote ] && return
   false
 }
 
 # git push, but set upstream if no remote set for branch
-function git-push-with-set-upstream() {
-  if ! branch-has-remote $(git branch --show-current); then
+function git_push_with_set_upstream() {
+  if ! git_branch_has_remote $(git branch --show-current); then
     local remote=$(git config branch.$(git_main_branch).remote)
     local current_branch=$(git branch --show-current)
     git push --set-upstream $remote $current_branch $@
@@ -394,7 +401,7 @@ function git-push-with-set-upstream() {
     git push $@
   fi
 }
-alias gp='git-push-with-set-upstream'
+alias gp='git_push_with_set_upstream'
 
 # --- Aliases from oh-my-zsh (not comprehensive) ---
 
