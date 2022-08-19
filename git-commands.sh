@@ -1,7 +1,8 @@
 #!/bin/bash
 
 function git_cmd_err() {
-  printf "\e[31merror: $@\e[0m\n" 1>&2
+  printf "\e[31merror: $@\e[0m\n" >&2
+  false
 }
 
 # merge fast forward only
@@ -17,7 +18,7 @@ if [ -z "$ZSH" ]; then
   function grename() {
     if [[ -z "$1" || -z "$2" ]]; then
       git_cmd_err "usage: $0 old_branch new_branch"
-      return 1
+      return
     fi
 
     # Rename branch locally
@@ -61,7 +62,7 @@ function git_commits_ahead() {
   if git rev-parse --git-dir &>/dev/null; then
     local commits="$(git rev-list --count @{upstream}..HEAD 2>/dev/null)"
     if [[ -n "$commits" && "$commits" != 0 ]]; then
-      return $commits
+      echo $commits
     fi
   fi
 }
@@ -71,7 +72,7 @@ function git_commits_behind() {
   if git rev-parse --git-dir &>/dev/null; then
     local commits="$(git rev-list --count HEAD..@{upstream} 2>/dev/null)"
     if [[ -n "$commits" && "$commits" != 0 ]]; then
-      return $commits
+      echo $commits
     fi
   fi
 }
@@ -216,12 +217,12 @@ function git_find_parent_branch() {
 function git_commits_from_parent() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
-    return 1
+    return
   fi
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   if [[ -n "$commits" && "$commits" != 0 ]]; then
-    return $commits
+    echo $commits
   fi
 }
 
@@ -230,7 +231,7 @@ function git_force_push() {
   local current_branch=$(git branch --show-current)
   if [ $current_branch = $(git_main_branch) ]; then
     git_cmd_err "cannot force push to main"
-    return 1
+    return
   fi
   git push origin $current_branch --force-with-lease
 }
@@ -250,7 +251,7 @@ alias gmffthis='git_merge_ff_this'
 function git_rebase_n_commits() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits, e.g. $0 1"
-    return 1
+    return
   fi
   git rebase -i HEAD~$1
 }
@@ -273,7 +274,7 @@ alias gbcount='git_branch_num_commits'
 function git_rebase_branch() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
-    return 1
+    return
   fi
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
@@ -287,13 +288,13 @@ function git_reset_branch() {
   local current_branch=$(git branch --show-current)
   if [ $current_branch = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
-    return 1
+    return
   elif [[ "$current_branch" == *"develop"* ]]; then
     git_cmd_err "this command doesn't work on a dev branch"
-    return 1
+    return
   elif [[ "$current_branch" == *"release"* ]]; then
     git_cmd_err "this command doesn't work on a release branch"
-    return 1
+    return
   fi
 
   local parent=$(git_find_parent_branch)
@@ -301,13 +302,13 @@ function git_reset_branch() {
 
   if [ "$commits" -lt "1" ]; then
     git_cmd_err "no commits to reset"
-    return 1
+    return
   fi
   if [ "$commits" -gt "30" ]; then
     printf "\e[33mAre you... sure you want to reset $commits commits?\e[0m\n"
     printf "\e[33mRun the following if you are:\e[0m\n"
     printf "  git reset --soft HEAD~$commits\n"
-    return 1
+    return
   fi
 
   # go back
@@ -328,7 +329,7 @@ alias grsbranch='git_reset_branch'
 function git_rebase_forward() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
-    return 1
+    return
   fi
   local parent=$(git_find_parent_branch)
   git pull origin $parent
@@ -360,7 +361,7 @@ alias grop='git_rebase_forward'
 function git_rebase_on_main() {
   if [ $(git branch --show-current) = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
-    return 1
+    return
   fi
   git pull origin $(git_main_branch)
   git rebase origin/$(git_main_branch)
@@ -375,7 +376,7 @@ alias grb-a="git rebase --abort"
 function git_reset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits, e.g. $0 1"
-    return 1
+    return
   fi
   # go back
   git reset --soft HEAD~$1
