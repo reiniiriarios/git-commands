@@ -374,7 +374,7 @@ alias gp='git_push_with_set_upstream'
 
 # --- Functions and aliases from oh-my-zsh (not comprehensive) ---
 
-if ! [ -d ~/.oh-my-zsh ]; then
+if ! [ -d "$HOME/.oh-my-zsh" ]; then
 
   # rename branch
   function grename() {
