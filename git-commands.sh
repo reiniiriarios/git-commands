@@ -79,7 +79,7 @@ function git_find_parent_branch() {
   fi
 
   # check branch isn't main
-  git_cmd_branch_protection_main $start_branch
+  git_cmd_branch_protection_main $start_branch || return
 
   # get all branches that aren't the current
   local all_branches=( $(git rev-parse --symbolic --branches) )
