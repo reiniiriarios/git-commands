@@ -64,6 +64,10 @@ function git_commits_behind() {
 }
 
 # find parent branch of $1, or current branch if $1 is empty
+# usage: git_find_parent_branch
+#        git_find_parent_branch branch_name
+#        git_find_parent_branch -a branch_name
+# ------------------------------------------------------------
 #   in the following example, 'release-20' would be returned
 #           E---F---G  current-branch
 #          /
@@ -71,11 +75,23 @@ function git_commits_behind() {
 #        /
 #   A---B  main
 function git_find_parent_branch() {
+  # whether to search all branches or limit by regex (listed below)
+  if [ "$1" = "-a" ] || [ "$1" = "--all" ]; then
+    local search_all=1
+    shift
+  else
+    local search_all=0
+  fi
+
   # start searching at start_branch
   if [ -z "$1" ]; then
     local start_branch=$(git branch --show-current)
   else
     local start_branch=$1
+    if ! git rev-parse --quiet --verify $start_branch; then
+      git_cmd_err "branch $start_branch not found"
+      return
+    fi
   fi
 
   # check branch isn't main
@@ -85,24 +101,28 @@ function git_find_parent_branch() {
   local all_branches=( $(git rev-parse --symbolic --branches) )
 
   # only look at branches that match these regexes
-  local -a regexes=(
-    "^$(git_main_branch)$" \
-    "^dev.*$" \
-    "^release.*$" 
-  )
+  if [ $search_all -eq 0 ]; then
+    local -a regexes=(
+      "^$(git_main_branch)$" \
+      "^dev.*$" \
+      "^release.*$" 
+    )
 
-  # filter branches by regexes
-  local -a candidate_branches=()
-  local -A branches_found
-  for branch in $all_branches; do
-    for regex in $regexes; do
-      if [[ $branch != $start_branch && $branch =~ $regex && -z "${branches_found[$branch]}" ]]; then
-        candidate_branches+=( "$branch" )
-        # logging each in branches_found prevents duplicates
-        branches_found[$branch]=1
-      fi
+    # filter branches by regexes
+    local -a candidate_branches=()
+    local -A branches_found
+    for branch in $all_branches; do
+      for regex in $regexes; do
+        if [[ $branch != $start_branch && $branch =~ $regex && -z "${branches_found[$branch]}" ]]; then
+          candidate_branches+=( "$branch" )
+          # logging each in branches_found prevents duplicates
+          branches_found[$branch]=1
+        fi
+      done
     done
-  done
+  else
+    local -a candidate_branches=( "${all_branches[@]}" )
+  fi
 
   # `git show-branch` cannot show more than 29 branches and commits at a time
   local max_branches_returned=28
