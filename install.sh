@@ -26,11 +26,6 @@ if [ ! -z "$rcfile" ]; then
 else
   printf "\e[31munable to locate .*rc file to install script\n"
   printf "add the following lines to your shell rc file:\e[0m\n"
-  printf "$rclinecomment"
-  printf "$rcline"
+  printf "$rclinecomment\n"
+  printf "$rcline\n"
 fi
-
-unset SCRIPT_DIR
-unset rcfile
-unset rclinecomment
-unset rcline
