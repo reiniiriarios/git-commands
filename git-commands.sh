@@ -236,6 +236,7 @@ function git_force_push() {
   git push origin $current_branch --force-with-lease
 }
 alias gfp='git_force_push'
+alias gpf='git_force_push'
 
 # merge fast-forward only - current branch with main
 function git_merge_ff_this() {
@@ -473,11 +474,6 @@ if [ -z "$ZSH" ]; then
   alias ggpull='git pull origin "$(git branch --show-current)"'
   alias ggpush='git push origin "$(git branch --show-current)"'
 
-  alias ggsup='git branch --set-upstream-to=origin/$(git branch --show-current)'
-  alias gpsup='git push --set-upstream origin $(git branch --show-current)'
-
-  alias ghh='git help'
-
   alias gignore='git update-index --assume-unchanged'
   alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
@@ -515,20 +511,12 @@ if [ -z "$ZSH" ]; then
 
   #alias gp='git push'
   alias gpd='git push --dry-run'
-  alias gpf='git push --force-with-lease'
+  # alias gpf='git push --force-with-lease'
   alias gpf!='git push --force'
   alias gpoat='git push origin --all && git push origin --tags'
   alias gpr='git pull --rebase'
   alias gpu='git push upstream'
   alias gpv='git push -v'
-
-  alias gr='git remote'
-  alias gra='git remote add'
-  alias grmv='git remote rename'
-  alias grrm='git remote remove'
-  alias grset='git remote set-url'
-  alias grup='git remote update'
-  alias grv='git remote -v'
 
   alias grb='git rebase'
   alias grba='git rebase --abort'
@@ -541,11 +529,6 @@ if [ -z "$ZSH" ]; then
   alias grbs='git rebase --skip'
 
   alias grev='git revert'
-
-  alias grh='git reset'
-  alias grhh='git reset --hard'
-  alias groh='git reset origin/$(git_current_branch) --hard'
-  alias gru='git reset --'
 
   alias grm='git rm'
   alias grmc='git rm --cached'
