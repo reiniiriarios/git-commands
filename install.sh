@@ -2,6 +2,8 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# LINK FILE
+
 # windows
 if [ -n "$WINDIR" ]; then
   if ! ls -al "$HOME" | grep .git-commands.sh | grep -q ^l; then
@@ -22,27 +24,25 @@ else
   printf "  $HOME/.git-commands.sh\n"
 fi
 
-rcfile=
-if [ -f "$HOME/.bashrc" ]; then
-  rcfile=".bashrc"
-elif [ -f "$HOME/.zshrc" ]; then
-  rcfile=".zshrc"
-fi
+# ADD TO .bashrc/.zshrc
 
 rclinecomment="# git commands"
 rcline='[ -s "$HOME/.git-commands.sh" ] && . "$HOME/.git-commands.sh"'
 
-if [ ! -z "$rcfile" ]; then
-  if grep -Fq "$rcline" "$HOME/$rcfile"; then
-    printf "\e[36mscript already installed in $rcfile\e[0m\n"
-  else
-    echo "\n$rclinecomment\n$rcline\n" >> "$HOME/$rcfile"
-    printf "\e[32mscript installed in $rcfile\e[0m\n"
-    . "$HOME/$rcfile"
-  fi
+if [ -f "$HOME/.bashrc" ]; then
+  rcfile=".bashrc"
+elif [ -f "$HOME/.zshrc" ]; then
+  rcfile=".zshrc"
 else
   printf "\e[31munable to locate .*rc file to install script\n"
-  printf "add the following lines to your shell rc file:\e[0m\n"
-  printf "$rclinecomment\n"
+  printf "add the following line to your shell rc file:\e[0m\n"
   printf "$rcline\n"
+fi
+
+if grep -Fq "$rcline" "$HOME/$rcfile"; then
+  printf "\e[36mscript already installed in $rcfile\e[0m\n"
+else
+  echo "\n$rclinecomment\n$rcline\n" >> "$HOME/$rcfile"
+  printf "\e[32mscript installed in $rcfile\e[0m\n"
+  . "$HOME/$rcfile"
 fi
