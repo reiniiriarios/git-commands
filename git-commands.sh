@@ -15,7 +15,7 @@ function git_cmd_branch_protection() {
   if [ $check_branch = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return
-  elif [[ "$check_branch" == *"develop"* ]]; then
+  elif [[ "$check_branch" == *"develop"* || "$check_branch" == "dev"* ]]; then
     git_cmd_err "this command doesn't work on a dev branch"
     return
   elif [[ "$check_branch" == *"release"* ]]; then
@@ -84,7 +84,7 @@ function git_commits_behind() {
 #        git_find_parent_branch branch_name
 #        git_find_parent_branch -a branch_name
 # ------------------------------------------------------------
-#   in the following example, 'release-20' would be returned
+# in the following example, 'release-20' would be returned
 #           E---F---G  current-branch
 #          /
 #         C---D  release-20, feat--something
@@ -166,15 +166,17 @@ function git_find_parent_branch() {
       #   -> limit to lines with '_' <= 1
       #   -> get the first line
       #   -> split each character to its own line
-      local map=( $(git show-branch --topo-order "${check_branches[@]}" "$start_branch" \
-                      | tail -n +$(($num_check_branches+3)) \
-                      | sed "s/ \[.*$//" \
-                      | sed "s/ /_/g" \
-                      | sed "s/*/+/g" \
-                      | egrep '^_*[^_].*[^_]$' \
-                      | head -n1 \
-                      | sed 's/\(.\)/\1\n/g'
-                ) )
+      local map=(
+        $(git show-branch --topo-order "${check_branches[@]}" "$start_branch" \
+          | tail -n +$(($num_check_branches+3)) \
+          | sed "s/ \[.*$//" \
+          | sed "s/ /_/g" \
+          | sed "s/*/+/g" \
+          | egrep '^_*[^_].*[^_]$' \
+          | head -n1 \
+          | sed 's/\(.\)/\1\n/g'
+        )
+      )
 
       # given the following list of potential branches
       #   main release-30
@@ -224,7 +226,7 @@ function git_find_parent_branch() {
   # check if we narrowed to a single result
   if [[ ${#candidate_branches[@]} -gt 1 ]]; then
     git_cmd_err "unable to narrow parent branch down from the following:"
-    git_cmd_err "  ${candidate_branches[@]}"
+    printf "  ${candidate_branches[@]}\n"
     return
   fi
 
@@ -286,7 +288,7 @@ alias grbn='git_rebase_n_commits'
 # show the number of commits on a branch based on git_find_parent_branch()
 function git_branch_num_commits() {
   local current=$(git branch --show-current)
-  local parent=$(git_find_parent_branch 2&>/dev/null)
+  local parent=$(git_find_parent_branch 2>/dev/null)
   if [ -z $parent ]; then
     local commits=$(git rev-list --count HEAD)
   else
@@ -302,6 +304,17 @@ function git_rebase_branch() {
   
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
+  if [ "$commits" -lt "1" ]; then
+    git_cmd_err "no commits to rebase"
+    return
+  fi
+  if [ "$commits" -gt "60" ]; then
+    printf "\e[33mAre you... sure you want to rebase $commits commits?\e[0m\n"
+    printf "\e[33mRun the following if you are:\e[0m\n"
+    printf "  git rebase -i HEAD~$commits\n"
+    return
+  fi
+
   git rebase -i HEAD~$commits
 }
 alias grbranch='git_rebase_branch'
@@ -537,6 +550,8 @@ if ! [ -d "$HOME/.oh-my-zsh" ]; then
 
   alias gf='git fetch'
   alias gfo='git fetch origin'
+  alias gfa='git fetch --all'
+  alias gfprune='git fetch --prune'
 
   alias gfg='git ls-files | grep'
 
