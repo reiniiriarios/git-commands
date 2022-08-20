@@ -343,6 +343,26 @@ function git_rebase_branch() {
 alias grbranch='git_rebase_branch'
 alias grbbranch='git_rebase_branch'
 
+# squash branch (automatically) via interactive rebase
+function git_squash_branch() {
+  git_cmd_branch_protection || return
+  
+  local parent=$(git_find_parent_branch)
+  local commits=$(git rev-list --count HEAD ^$parent)
+  if [ "$commits" -lt "2" ]; then
+    git_cmd_err "no commits to squash"
+    return
+  fi
+  if [ "$commits" -gt "30" ] && [ "$1" != "-y" ]; then
+    printf "\e[33mAre you... sure you want to squash $commits commits?\e[0m\n"
+    printf "\e[33mRun the following if you are:\e[0m\n"
+    printf "  git_squash_branch -y\n"
+    return
+  fi
+
+  GIT_SEQUENCE_EDITOR="sed -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
+}
+
 # reset all commits on branch
 function git_reset_branch() {
   git_cmd_branch_protection || return
