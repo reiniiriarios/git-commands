@@ -332,11 +332,12 @@ function git_rebase_branch() {
     git_cmd_err "no commits to rebase"
     return
   fi
-  if [ "$commits" -gt "60" ]; then
-    printf "\e[33mAre you... sure you want to rebase $commits commits?\e[0m\n"
-    printf "\e[33mRun the following if you are:\e[0m\n"
-    printf "  git rebase -i HEAD~$commits\n"
-    return
+  if [ "$commits" -gt "40" ] && [ "$1" != "-y" ]; then
+    printf "\e[33mAre you sure you want to rebase $commits commits? [y/N] \e[0m"
+    read confirm
+    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
+      return
+    fi
   fi
 
   git rebase -i HEAD~$commits
@@ -355,10 +356,11 @@ function git_squash_branch() {
     return
   fi
   if [ "$commits" -gt "30" ] && [ "$1" != "-y" ]; then
-    printf "\e[33mAre you... sure you want to squash $commits commits?\e[0m\n"
-    printf "\e[33mRun the following if you are:\e[0m\n"
-    printf "  git_squash_branch -y\n"
-    return
+    printf "\e[33mAre you sure you want to squash $commits commits? [y/N] \e[0m"
+    read confirm
+    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
+      return
+    fi
   fi
 
   GIT_SEQUENCE_EDITOR="sed -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
@@ -376,11 +378,13 @@ function git_reset_branch() {
     git_cmd_err "no commits to reset"
     return
   fi
-  if [ "$commits" -gt "30" ]; then
-    printf "\e[33mAre you... sure you want to reset $commits commits?\e[0m\n"
-    printf "\e[33mRun the following if you are:\e[0m\n"
-    printf "  git reset --soft HEAD~$commits\n"
-    return
+  if [ "$commits" -gt "30" ] && [ "$1" != "-y" ]; then
+    printf "\e[33mAre you sure you want to reset $commits commits? [y/N] \e[0m"
+    read confirm
+    printf "\n"
+    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
+      return
+    fi
   fi
 
   # go back
