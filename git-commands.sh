@@ -317,7 +317,8 @@ function git_branch_num_commits() {
   else
     local commits=$(git rev-list --count HEAD ^$parent)
   fi
-  printf "\e[33m$commits commits\e[0m on \e[32m$current\e[0m\n"
+  local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
+  printf "\e[33m$commits commit$s\e[0m on \e[32m$current\e[0m\n"
 }
 alias gbcount='git_branch_num_commits'
 
