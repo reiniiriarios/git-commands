@@ -82,7 +82,7 @@ function git_commits_behind() {
 # find branch name by search string
 function git_find_branch() {
   if [ -z $1 ]; then
-    git_cmd_err "missing search string, e.g. $0 ISSUE-1234"
+    git_cmd_err "missing search string, e.g. ISSUE-1234"
     return
   fi
   local branch=$(git branch -r | grep -v HEAD | grep $1 | awk -F'/' '{print $2}')
@@ -93,7 +93,7 @@ function git_find_branch() {
   echo $branch
 }
 
-# checkout branch by search string, if found
+# checkout branch by search string, if found, e.g. gswf ISSUE-1234
 function git_switch_branch_by_search() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
@@ -301,7 +301,7 @@ alias gmffthis='git_merge_ff_this'
 # rebase interactively n commits back
 function git_rebase_n_commits() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    git_cmd_err "missing number of commits, e.g. $0 1"
+    git_cmd_err "missing number of commits argument"
     return
   fi
   git rebase -i HEAD~$1
@@ -431,7 +431,7 @@ alias grom='git_rebase_on_main'
 # reset n commits back
 function git_reset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    git_cmd_err "missing number of commits, e.g. $0 1"
+    git_cmd_err "missing number of commits argument"
     return
   fi
   # go back
@@ -473,7 +473,7 @@ if ! [ -d "$HOME/.oh-my-zsh" ]; then
   # rename branch
   function grename() {
     if [[ -z "$1" || -z "$2" ]]; then
-      git_cmd_err "usage: $0 old_branch new_branch"
+      git_cmd_err "usage: grename old_branch new_branch"
       return
     fi
 
