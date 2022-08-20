@@ -362,6 +362,7 @@ function git_squash_branch() {
 
   GIT_SEQUENCE_EDITOR="sed -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
 }
+alias gsqbranch='git_squash_branch'
 
 # reset all commits on branch
 function git_reset_branch() {
