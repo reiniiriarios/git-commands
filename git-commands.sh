@@ -79,6 +79,29 @@ function git_commits_behind() {
   fi
 }
 
+# find branch name by search string
+function git_find_branch() {
+  if [ -z $1 ]; then
+    git_cmd_err "missing search string, e.g. $0 ISSUE-1234"
+    return
+  fi
+  local branch=$(git branch -r | grep -v HEAD | grep $1 | awk -F'/' '{print $2}')
+  if [ -z $branch ]; then
+    git_cmd_err "unable to find branch matching: $1"
+    return
+  fi
+  echo $branch
+}
+
+# checkout branch by search string, if found
+function git_switch_branch_by_search() {
+  local branch=$(git_find_branch $1)
+  if [ -n "$branch" ]; then
+    git switch $branch
+  fi
+}
+alias gswf='git_switch_branch_by_search'
+
 # find parent branch of $1, or current branch if $1 is empty
 # usage: git_find_parent_branch
 #        git_find_parent_branch branch_name
@@ -356,13 +379,13 @@ alias grsbranch='git_reset_branch'
 # ---------------------------------------
 #         A---B current-branch
 #        /
-#       C---D another-branch
+#       C---D release-7
 #      /
 # E---F---G main
 #       ==>>
 #             A---B current-branch
 #            /
-#       C---D another-branch
+#       C---D release-7
 #      /
 # E---F---G main
 function git_rebase_forward() {
@@ -393,7 +416,7 @@ alias grop='git_rebase_forward'
 #       ==>>
 #           C---D another-branch
 #          /
-#        /  A'--B' current-branch
+#        /  C'--A'--B' current-branch
 #      /   /
 # E---F---G main
 function git_rebase_on_main() {
