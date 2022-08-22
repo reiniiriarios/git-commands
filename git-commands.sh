@@ -93,7 +93,7 @@ function git_find_branch() {
   echo $branch
 }
 
-# checkout branch by search string, if found, e.g. gswf ISSUE-1234
+# switch branch by search string, if found, e.g. gswf ISSUE-1234
 function git_switch_branch_by_search() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
@@ -101,6 +101,15 @@ function git_switch_branch_by_search() {
   fi
 }
 alias gswf='git_switch_branch_by_search'
+
+# checkout branch by search string, if found, e.g. gswf ISSUE-1234
+function git_checkout_branch_by_search() {
+  local branch=$(git_find_branch $1)
+  if [ -n "$branch" ]; then
+    git checkout $branch
+  fi
+}
+alias gcof='git_checkout_branch_by_search'
 
 # find parent branch of $1, or current branch if $1 is empty
 # usage: git_find_parent_branch
