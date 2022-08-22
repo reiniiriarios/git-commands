@@ -211,17 +211,17 @@ function git_find_parent_branch() {
       )
 
       # given the following list of potential branches
-      #   main release-30
+      #   main release-20
       # and given the following result from `git show-branch`
       # ----------------------------------------
       # ! [main] main commit
       #  ! [release-20] release commit 2
-      #   * [chore--something] chore commit 2
+      #   * [chore--current-branch] chore commit 2
       # ---
       # +   [main] main commit
       #  +  [release-20] release commit 2
-      #   * [chore--something] chore commit 2
-      #   * [chore--something^] chore commit
+      #   * [chore--current-branch] chore commit 2
+      #   * [chore--current-branch^] chore commit
       #  +* [release-20^] release commit
       # ++* [main^] test
       # ----------------------------------------
@@ -418,7 +418,7 @@ alias grsbranch='git_reset_branch'
 #      /
 # E---F---G main
 #       ==>>
-#             A---B current-branch
+#             A'---B' current-branch
 #            /
 #       C---D release-7
 #      /
