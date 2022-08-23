@@ -5,6 +5,12 @@ function git_cmd_err() {
   false
 }
 
+# portable sed by using gnu-sed on macos
+# sed -i -e ... - does not work on OS X as it creates -e backups
+# sed -i'' -e ... - does not work on OS X 10.6 but works on 10.9+
+# sed -i '' -e ... - not working on GNU
+[[ "$(uname -s)" == "Darwin"* ]] && SED_PORTABLE="gsed" || SED_PORTABLE="sed"
+
 # err function to protect these branches, to be called by other functions
 function git_cmd_branch_protection() {
   if [ -z "$1" ]; then
@@ -387,7 +393,7 @@ function git_squash_branch() {
     fi
   fi
 
-  GIT_SEQUENCE_EDITOR="sed -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
+  GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
 }
 alias gsqbranch='git_squash_branch'
 

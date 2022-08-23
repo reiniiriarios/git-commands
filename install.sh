@@ -46,3 +46,14 @@ else
   printf "\e[32mscript installed in $rcfile\e[0m\n"
   . "$HOME/$rcfile"
 fi
+
+# DEPENDENCIES
+
+# make sure gsed is installed on macos
+if [[ "$(uname -s)" == "Darwin"*  && ! $(which gsed) ]]; then
+  if which brew >/dev/null; then
+    brew install gnu-sed
+  else
+    printf "\e[31brew not found, please install gnu-sed\e[0m"
+  fi
+fi
