@@ -299,7 +299,7 @@ alias gmff="git merge --ff-only"
 # merge fast-forward only - current branch with git_find_parent_branch()
 function git_merge_ff_this() {
   local branch_to_merge=$(git branch --show-current)
-  local parent = $(git_find_parent_branch)
+  local parent=$(git_find_parent_branch)
   if [ $branch_to_merge ]; then
     git checkout $parent
     git merge --ff-only $branch_to_merge
