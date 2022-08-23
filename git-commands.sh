@@ -103,12 +103,11 @@ function git_find_branch() {
     fi
   fi
   local num_results=$(echo "$branches" | wc -l | tr -d ' ')
-  if [ $num_results -gt 10 ]; then
+  if [ $num_results -gt 1 ]; then
     git_cmd_err "unable to narrow results, $num_results $result_source matches"
-    return
-  elif [ $num_results -gt 1 ]; then
-    git_cmd_err "unable to narrow results, $num_results $result_source matches"
-    printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
+    if [ $num_results -lt 11 ]; then
+      printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
+    fi
     return
   fi
   echo $branches
