@@ -58,6 +58,7 @@ function git_remote_reset() {
   git fetch $remote $branch
   git reset --hard "$remote/$branch"
 }
+alias gremotereset='git_remote_reset'
 
 # number of commits ahead from remote
 function git_commits_ahead() {
