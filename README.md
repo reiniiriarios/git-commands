@@ -25,9 +25,8 @@ Alias|Function|Description
 `gcof`|`git_checkout_branch_by_search <search_string>`|`git checkout` via search string
 `grf`|`git_rebase_forward`|rebase current branch to be up to date with parent
 `grom`|`git_rebase_on_main`|rebase current branch to be up to date with main
+`gsquash`|`git_squash <n>`|auto-squash n commits via `rebase -i`
 `grbbranch`|`git_rebase_branch`|`git rebase -i` all commits on the current branch
 `gsqbranch`|`git_squash_branch`|auto-squash all commits on current branch via `rebase -i`
 `grsbranch`|`git_reset_branch`|soft reset all commits and unstage changes on current branch
 `gbcount`|`git_branch_num_commits`|display number of commits on current branch
-`gp`|`git_push_with_set_upstream`|`git push` but if branch has no upstream, it's set to current branch name
-
