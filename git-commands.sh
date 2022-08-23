@@ -424,6 +424,19 @@ function git_reset_branch() {
 }
 alias grsbranch='git_reset_branch'
 
+# squash n commits
+function git_squash() {
+  git_cmd_branch_protection || return
+
+  if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    git_cmd_err "missing number of commits argument"
+    return
+  fi
+
+  GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$1
+}
+alias gsquash='git_squash'
+
 # rebase current branch onto parent branch based on git_find_parent_branch()
 #       A---B---C current-branch
 #      /
