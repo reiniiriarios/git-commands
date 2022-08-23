@@ -529,7 +529,7 @@ if ! [ -d "$HOME/.oh-my-zsh" ]; then
     local ref
     for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
       if command git show-ref -q --verify $ref; then
-        echo $ref | cut -d '/' -f3
+        echo $ref | cut -d '/' -f 3
         return
       fi
     done
