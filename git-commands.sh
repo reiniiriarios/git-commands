@@ -428,9 +428,24 @@ alias grsbranch='git_reset_branch'
 function git_squash() {
   git_cmd_branch_protection || return
 
+  local confirm=0
+  if [[ "$1" == "-y" ]]; then
+    local confirm=1
+    shift
+  fi
+
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits argument"
     return
+  fi
+
+  if [ "$1" -gt "10" ] || [ "$confirm" -eq 1 ]; then
+    printf "\e[33mAre you sure you want to squash $1 commits? [y/N] \e[0m"
+    read confirm
+    printf "\n"
+    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
+      return
+    fi
   fi
 
   GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$1
