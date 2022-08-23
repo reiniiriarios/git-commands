@@ -489,18 +489,6 @@ function git_branch_has_remote() {
   false
 }
 
-# git push, but set upstream if no remote set for branch
-function git_push_with_set_upstream() {
-  if ! git_branch_has_remote $(git branch --show-current); then
-    local remote=$(git config branch.$(git_main_branch).remote)
-    local current_branch=$(git branch --show-current)
-    git push --set-upstream $remote $current_branch $@
-  else
-    git push $@
-  fi
-}
-alias gp='git_push_with_set_upstream'
-
 # --- Functions and aliases from oh-my-zsh (not comprehensive) ---
 
 if ! [ -d "$HOME/.oh-my-zsh" ]; then
