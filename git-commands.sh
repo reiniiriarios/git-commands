@@ -85,12 +85,26 @@ function git_find_branch() {
     git_cmd_err "missing search string, e.g. ISSUE-1234"
     return
   fi
-  local branch=$(git branch -r | grep -v HEAD | grep $1 | awk -F'/' '{print $2}')
-  if [ -z $branch ]; then
-    git_cmd_err "unable to find branch matching: $1"
+  local branches=$(git branch --list "*$1*" --format '%(refname:lstrip=-1)')
+  local result_source="local"
+  if [ -z "$branches" ]; then
+    local result_source="remote"
+    local branches=$(git branch -r --list "*$1*" --format '%(refname:lstrip=-1)')
+    if [ -z "$branches" ]; then
+      git_cmd_err "unable to find branch matching: $1"
+      return
+    fi
+  fi
+  local num_results=$(echo "$branches" | wc -l | tr -d ' ')
+  if [ $num_results -gt 10 ]; then
+    git_cmd_err "unable to narrow results, $num_results $result_source matches"
+    return
+  elif [ $num_results -gt 1 ]; then
+    git_cmd_err "unable to narrow results, $num_results $result_source matches"
+    printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
     return
   fi
-  echo $branch
+  echo $branches
 }
 
 # switch branch by search string, if found, e.g. gswf ISSUE-1234
