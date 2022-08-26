@@ -297,6 +297,35 @@ function git_commits_from_parent() {
   fi
 }
 
+# number of commits out of date from remote parent
+function git_commits_out_of_date() {
+  git_cmd_branch_protection_main || return
+
+  if [ -z "$1" ]; then
+    local parent=$(git_find_parent_branch $check_branch)
+  else
+    local parent=$1
+  fi
+  if [ -z "$2" ]; then
+    local check_branch=$(git branch --show-current)
+  else
+    local check_branch=$2
+  fi
+  if [[ "$check_branch" == "$parent" ]]; then
+    git_cmd_err "comparing $check_branch to itself"
+    return
+  fi
+
+  local remote=$(git config branch.$parent.remote)
+  ! [ -z $remote ] && remote="$remote/"
+
+  local commits=$(git rev-list --left-only --count $remote$parent...$check_branch)
+
+  if [[ -n "$commits" && "$commits" > 0 ]]; then
+    echo $commits
+  fi
+}
+
 # force push to remote with branch protection
 function git_force_push() {
   local current_branch=$(git branch --show-current)
