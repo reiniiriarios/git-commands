@@ -348,8 +348,14 @@ alias gmff="git merge --ff-only"
 # merge fast-forward only - current branch with git_find_parent_branch()
 function git_merge_ff_this() {
   local branch_to_merge=$(git branch --show-current)
-  local parent=$(git_find_parent_branch)
   if [ $branch_to_merge ]; then
+    local parent=$(git_find_parent_branch)
+    local commits=$(git_commits_out_of_date)
+    if [[ -n "$commits" && "$commits" != 0 ]]; then
+      local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
+      git_cmd_err "unable to fast-forward merge, out of date by $commits commit$s"
+      return
+    fi
     git checkout $parent
     git merge --ff-only $branch_to_merge
   fi
