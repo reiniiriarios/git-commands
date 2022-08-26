@@ -299,8 +299,6 @@ function git_commits_from_parent() {
 
 # number of commits out of date from remote parent
 function git_commits_out_of_date() {
-  git_cmd_branch_protection_main || return
-
   if [ -z "$1" ]; then
     local parent=$(git_find_parent_branch $check_branch)
   else
@@ -311,15 +309,17 @@ function git_commits_out_of_date() {
   else
     local check_branch=$2
   fi
+
   if [[ "$check_branch" == "$parent" ]]; then
     git_cmd_err "comparing $check_branch to itself"
     return
   fi
+  if [[ "$check_branch" == "$(git_main_branch)" ]]; then
+    git_cmd_err "this command doesn't work on main"
+    return
+  fi
 
-  local remote=$(git config branch.$parent.remote)
-  ! [ -z $remote ] && remote="$remote/"
-
-  local commits=$(git rev-list --left-only --count $remote$parent...$check_branch)
+  local commits=$(git rev-list --left-only --count $parent...$check_branch)
 
   if [[ -n "$commits" && "$commits" > 0 ]]; then
     echo $commits
