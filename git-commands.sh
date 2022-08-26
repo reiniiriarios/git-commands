@@ -156,7 +156,7 @@ function git_find_parent_branch() {
     local start_branch=$(git branch --show-current)
   else
     local start_branch=$1
-    if ! git rev-parse --quiet --verify $start_branch; then
+    if ! git rev-parse --quiet --verify $start_branch >/dev/null; then
       git_cmd_err "branch $start_branch not found"
       return
     fi
@@ -278,7 +278,7 @@ function git_find_parent_branch() {
   # check if we narrowed to a single result
   if [[ ${#candidate_branches[@]} -gt 1 ]]; then
     git_cmd_err "unable to narrow parent branch down from the following:"
-    printf "  ${candidate_branches[@]}\n"
+    printf "  ${candidate_branches[@]}\n" >&2
     return
   fi
 
