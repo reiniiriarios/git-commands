@@ -428,8 +428,7 @@ function git_rebase_branch() {
 
   git rebase -i HEAD~$commits
 }
-alias grbranch='git_rebase_branch'
-alias grbbranch='git_rebase_branch'
+alias gbrebase='git_rebase_branch'
 
 # squash branch (automatically) via interactive rebase
 function git_squash_branch() {
@@ -451,7 +450,7 @@ function git_squash_branch() {
 
   GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
 }
-alias gsqbranch='git_squash_branch'
+alias gbsquash='git_squash_branch'
 
 # reset all commits on branch
 function git_reset_branch() {
@@ -478,7 +477,7 @@ function git_reset_branch() {
   # and then unstage
   git reset
 }
-alias grsbranch='git_reset_branch'
+alias gbreset='git_reset_branch'
 
 # squash n commits
 function git_squash() {
