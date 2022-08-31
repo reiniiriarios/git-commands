@@ -43,7 +43,7 @@ function git_cmd_branch_protection_main() {
   fi
 }
 
-# reset current branch to remote origin
+# reset current branch to remote
 function git_remote_reset() {
   if [ -z "$1" ]; then
     local branch=$(git branch --show-current)
