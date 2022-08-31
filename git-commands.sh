@@ -286,18 +286,7 @@ function git_find_parent_branch() {
   echo "${candidate_branches[@]}"
 }
 
-# number of commits from parent branch based on git_find_parent_branch()
-function git_commits_from_parent() {
-  git_cmd_branch_protection_main || return
-
-  local parent=$(git_find_parent_branch)
-  local commits=$(git rev-list --count HEAD ^$parent)
-  if [[ -n "$commits" && "$commits" != 0 ]]; then
-    echo $commits
-  fi
-}
-
-# number of commits out of date from remote parent
+# number of commits out of date from parent
 function git_commits_out_of_date() {
   if [ -z "$1" ]; then
     local parent=$(git_find_parent_branch $check_branch)
