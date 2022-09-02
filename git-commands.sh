@@ -166,7 +166,7 @@ function git_find_parent_branch() {
   git_cmd_branch_protection_main $start_branch || return
 
   # get all branches that aren't the current
-  local all_branches=( $(git rev-parse --symbolic --branches) )
+  local all_branches=$(git rev-parse --symbolic --branches)
 
   # only look at branches that match these regexes
   if [ $search_all -eq 0 ]; then
@@ -552,7 +552,7 @@ function git_rebase_on_main() {
 
   local remote=$(git config branch.$(git_main_branch).remote)
   git pull $remote $(git_main_branch)
-  git rebase $remote/$(git_main_branch)
+  git rebase $(git_main_branch)
 }
 alias grom='git_rebase_on_main'
 
