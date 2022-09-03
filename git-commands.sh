@@ -582,220 +582,221 @@ function git_branch_has_remote() {
   false
 }
 
-# --- Functions and aliases from oh-my-zsh (not comprehensive) ---
+# -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
-if ! [ -d "$HOME/.oh-my-zsh" ]; then
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  return
+fi
 
-  # rename branch
-  function grename() {
-    if [[ -z "$1" || -z "$2" ]]; then
-      git_cmd_err "usage: grename old_branch new_branch"
+# rename branch
+function grename() {
+  if [[ -z "$1" || -z "$2" ]]; then
+    git_cmd_err "usage: grename old_branch new_branch"
+    return
+  fi
+
+  # Rename branch locally
+  git branch -m "$1" "$2"
+  # Rename branch in origin remote
+  if git push origin :"$1"; then
+    git push --set-upstream origin "$2"
+  fi
+}
+
+# get name of main branch
+function git_main_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+  local ref
+  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
+    if command git show-ref -q --verify $ref; then
+      echo $ref | cut -d '/' -f 3
       return
     fi
+  done
+  echo master
+}
 
-    # Rename branch locally
-    git branch -m "$1" "$2"
-    # Rename branch in origin remote
-    if git push origin :"$1"; then
-      git push --set-upstream origin "$2"
+# get name of dev branch
+function git_develop_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+  local branch
+  for branch in dev devel development; do
+    if command git show-ref -q --verify refs/heads/$branch; then
+      echo $branch
+      return
     fi
-  }
+  done
+  echo develop
+}
 
-  # get name of main branch
-  function git_main_branch() {
-    command git rev-parse --git-dir &>/dev/null || return
-    local ref
-    for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
-      if command git show-ref -q --verify $ref; then
-        echo $ref | cut -d '/' -f 3
-        return
-      fi
-    done
-    echo master
-  }
+# git pull origin
+function ggl() {
+  if ! [ -z "$1" ]; then
+    git pull origin "$1"
+  else
+    git pull origin "$(git rev-parse --abbrev-ref HEAD)"
+  fi
+}
 
-  # get name of dev branch
-  function git_develop_branch() {
-    command git rev-parse --git-dir &>/dev/null || return
-    local branch
-    for branch in dev devel development; do
-      if command git show-ref -q --verify refs/heads/$branch; then
-        echo $branch
-        return
-      fi
-    done
-    echo develop
-  }
+alias ga='git add'
+alias gaa='git add --all'
+alias gapa='git add --patch'
+alias gau='git add --update'
+alias gav='git add --verbose'
 
-  # git pull origin
-  function ggl() {
-    if ! [ -z "$1" ]; then
-      git pull origin "$1"
-    else
-      git pull origin "$(git rev-parse --abbrev-ref HEAD)"
-    fi
-  }
+alias gcb='git checkout -b'
+alias gcm='git checkout $(git_main_branch)'
+alias gco='git checkout'
 
-  alias ga='git add'
-  alias gaa='git add --all'
-  alias gapa='git add --patch'
-  alias gau='git add --update'
-  alias gav='git add --verbose'
+alias gb='git branch'
+alias gba='git branch -a'
+alias gbd='git branch -d'
+alias gbD='git branch -D'
+alias gbnm='git branch --no-merged'
+alias gbr='git branch --remote'
 
-  alias gcb='git checkout -b'
-  alias gcm='git checkout $(git_main_branch)'
-  alias gco='git checkout'
+alias gbl='git blame -b -w'
 
-  alias gb='git branch'
-  alias gba='git branch -a'
-  alias gbd='git branch -d'
-  alias gbD='git branch -D'
-  alias gbnm='git branch --no-merged'
-  alias gbr='git branch --remote'
+alias gbs='git bisect'
+alias gbsb='git bisect bad'
+alias gbsg='git bisect good'
+alias gbsr='git bisect reset'
+alias gbss='git bisect start'
 
-  alias gbl='git blame -b -w'
+alias gc='git commit -v'
+alias gc!='git commit -v --amend'
+alias gcn!='git commit -v --no-edit --amend'
+alias gca='git commit -v -a'
+alias gca!='git commit -v -a --amend'
+alias gcan!='git commit -v -a --no-edit --amend'
+alias gcans!='git commit -v -a -s --no-edit --amend'
+alias gcam='git commit -a -m'
+alias gcsm='git commit -s -m'
+alias gcas='git commit -a -s'
+alias gcasm='git commit -a -s -m'
+alias gcmsg='git commit -m'
+alias gcs='git commit -S'
+alias gcss='git commit -S -s'
+alias gcssm='git commit -S -s -m'
 
-  alias gbs='git bisect'
-  alias gbsb='git bisect bad'
-  alias gbsg='git bisect good'
-  alias gbsr='git bisect reset'
-  alias gbss='git bisect start'
+alias gcf='git config --list'
 
-  alias gc='git commit -v'
-  alias gc!='git commit -v --amend'
-  alias gcn!='git commit -v --no-edit --amend'
-  alias gca='git commit -v -a'
-  alias gca!='git commit -v -a --amend'
-  alias gcan!='git commit -v -a --no-edit --amend'
-  alias gcans!='git commit -v -a -s --no-edit --amend'
-  alias gcam='git commit -a -m'
-  alias gcsm='git commit -s -m'
-  alias gcas='git commit -a -s'
-  alias gcasm='git commit -a -s -m'
-  alias gcmsg='git commit -m'
-  alias gcs='git commit -S'
-  alias gcss='git commit -S -s'
-  alias gcssm='git commit -S -s -m'
+alias gcl='git clone --recurse-submodules'
 
-  alias gcf='git config --list'
+alias gcount='git shortlog -sn'
 
-  alias gcl='git clone --recurse-submodules'
+alias gcp='git cherry-pick'
+alias gcpa='git cherry-pick --abort'
+alias gcpc='git cherry-pick --continue'
 
-  alias gcount='git shortlog -sn'
+alias gf='git fetch'
+alias gfo='git fetch origin'
+alias gfa='git fetch --all'
+alias gfprune='git fetch --prune'
 
-  alias gcp='git cherry-pick'
-  alias gcpa='git cherry-pick --abort'
-  alias gcpc='git cherry-pick --continue'
+alias gfg='git ls-files | grep'
 
-  alias gf='git fetch'
-  alias gfo='git fetch origin'
-  alias gfa='git fetch --all'
-  alias gfprune='git fetch --prune'
+alias ggpur='ggu'
+alias ggpull='git pull origin "$(git branch --show-current)"'
+alias ggpush='git push origin "$(git branch --show-current)"'
 
-  alias gfg='git ls-files | grep'
+alias gignore='git update-index --assume-unchanged'
+alias gunignore='git update-index --no-assume-unchanged'
+alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
-  alias ggpur='ggu'
-  alias ggpull='git pull origin "$(git branch --show-current)"'
-  alias ggpush='git push origin "$(git branch --show-current)"'
+alias gl='git pull'
 
-  alias gignore='git update-index --assume-unchanged'
-  alias gunignore='git update-index --no-assume-unchanged'
-  alias gignored='git ls-files -v | grep "^[[:lower:]]"'
+alias gd='git diff'
+alias gdca='git diff --cached'
+alias gdcw='git diff --cached --word-diff'
+alias gds='git diff --staged'
+alias gdup='git diff @{upstream}'
+alias gdw='git diff --word-diff'
 
-  alias gl='git pull'
+alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
 
-  alias gd='git diff'
-  alias gdca='git diff --cached'
-  alias gdcw='git diff --cached --word-diff'
-  alias gds='git diff --staged'
-  alias gdup='git diff @{upstream}'
-  alias gdw='git diff --word-diff'
+alias glg='git log --stat'
+alias glgp='git log --stat -p'
+alias glgg='git log --graph'
+alias glgga='git log --graph --decorate --all'
+alias glgm='git log --graph --max-count=10'
+alias glo='git log --oneline --decorate'
+alias glog='git log --oneline --decorate --graph'
+alias gloga='git log --oneline --decorate --graph --all'
+alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'"
+alias glols="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --stat"
+alias glola="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --all"
+alias glod="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset'"
+alias glods="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset' --date=short"
 
-  alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
+alias gm='git merge'
+alias gmom='git merge origin/$(git_main_branch)'
+alias gmum='git merge upstream/$(git_main_branch)'
+alias gma='git merge --abort'
 
-  alias glg='git log --stat'
-  alias glgp='git log --stat -p'
-  alias glgg='git log --graph'
-  alias glgga='git log --graph --decorate --all'
-  alias glgm='git log --graph --max-count=10'
-  alias glo='git log --oneline --decorate'
-  alias glog='git log --oneline --decorate --graph'
-  alias gloga='git log --oneline --decorate --graph --all'
-  alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'"
-  alias glols="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --stat"
-  alias glola="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --all"
-  alias glod="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset'"
-  alias glods="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset' --date=short"
+alias gmtl='git mergetool --no-prompt'
+alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
 
-  alias gm='git merge'
-  alias gmom='git merge origin/$(git_main_branch)'
-  alias gmum='git merge upstream/$(git_main_branch)'
-  alias gma='git merge --abort'
+#alias gp='git push'
+alias gpd='git push --dry-run'
+# alias gpf='git push --force-with-lease'
+alias gpoat='git push origin --all && git push origin --tags'
+alias gpu='git push upstream'
+alias gpv='git push -v'
 
-  alias gmtl='git mergetool --no-prompt'
-  alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
+alias grb='git rebase'
+alias grba='git rebase --abort'
+alias grbc='git rebase --continue'
+alias grbi='git rebase -i'
+alias grbo='git rebase --onto'
+alias grbs='git rebase --skip'
 
-  #alias gp='git push'
-  alias gpd='git push --dry-run'
-  # alias gpf='git push --force-with-lease'
-  alias gpoat='git push origin --all && git push origin --tags'
-  alias gpu='git push upstream'
-  alias gpv='git push -v'
+alias grev='git revert'
 
-  alias grb='git rebase'
-  alias grba='git rebase --abort'
-  alias grbc='git rebase --continue'
-  alias grbi='git rebase -i'
-  alias grbo='git rebase --onto'
-  alias grbs='git rebase --skip'
+alias grm='git rm'
+alias grmc='git rm --cached'
 
-  alias grev='git revert'
+alias grs='git restore'
+alias grss='git restore --source'
+alias grst='git restore --staged'
 
-  alias grm='git rm'
-  alias grmc='git rm --cached'
+alias grt='cd "$(git rev-parse --show-toplevel || echo .)"'
 
-  alias grs='git restore'
-  alias grss='git restore --source'
-  alias grst='git restore --staged'
+alias gsb='git status -sb'
+alias gss='git status -s'
+alias gst='git status'
 
-  alias grt='cd "$(git rev-parse --show-toplevel || echo .)"'
+alias gsh='git show'
+alias gsps='git show --pretty=short --show-signature'
 
-  alias gsb='git status -sb'
-  alias gss='git status -s'
-  alias gst='git status'
+alias gsi='git submodule init'
+alias gsu='git submodule update'
 
-  alias gsh='git show'
-  alias gsps='git show --pretty=short --show-signature'
+alias gsta='git stash push'
+alias gstu='git stash push --include-untracked'
+alias gstaa='git stash apply'
+alias gstc='git stash clear'
+alias gstd='git stash drop'
+alias gstl='git stash list'
+alias gstp='git stash pop'
+alias gsts='git stash show --text'
+alias gstall='git stash --all'
 
-  alias gsi='git submodule init'
-  alias gsu='git submodule update'
+alias gsw='git switch'
+alias gswc='git switch -c'
+alias gswm='git switch $(git_main_branch)'
 
-  alias gsta='git stash push'
-  alias gstu='git stash push --include-untracked'
-  alias gstaa='git stash apply'
-  alias gstc='git stash clear'
-  alias gstd='git stash drop'
-  alias gstl='git stash list'
-  alias gstp='git stash pop'
-  alias gsts='git stash show --text'
-  alias gstall='git stash --all'
+alias gts='git tag -s'
+alias gtv='git tag | sort -V'
+alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
 
-  alias gsw='git switch'
-  alias gswc='git switch -c'
-  alias gswm='git switch $(git_main_branch)'
+alias gpr='git pull --rebase'
+alias gup='git pull --rebase'
+alias gupv='git pull --rebase -v'
+alias gupa='git pull --rebase --autostash'
+alias gupav='git pull --rebase --autostash -v'
+alias gupom='git pull --rebase origin $(git_main_branch)'
+alias gupomi='git pull --rebase=interactive origin $(git_main_branch)'
+alias glum='git pull upstream $(git_main_branch)'
 
-  alias gts='git tag -s'
-  alias gtv='git tag | sort -V'
-  alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
-
-  alias gpr='git pull --rebase'
-  alias gup='git pull --rebase'
-  alias gupv='git pull --rebase -v'
-  alias gupa='git pull --rebase --autostash'
-  alias gupav='git pull --rebase --autostash -v'
-  alias gupom='git pull --rebase origin $(git_main_branch)'
-  alias gupomi='git pull --rebase=interactive origin $(git_main_branch)'
-  alias glum='git pull upstream $(git_main_branch)'
-
-  alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
-fi
+alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
