@@ -737,7 +737,7 @@ alias gma='git merge --abort'
 alias gmtl='git mergetool --no-prompt'
 alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
 
-#alias gp='git push'
+alias gp='git push'
 alias gpd='git push --dry-run'
 # alias gpf='git push --force-with-lease'
 alias gpoat='git push origin --all && git push origin --tags'
