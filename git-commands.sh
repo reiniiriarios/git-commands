@@ -166,7 +166,7 @@ function git_find_parent_branch() {
   git_cmd_branch_protection_main $start_branch || return
 
   # get all branches that aren't the current
-  local all_branches=$(git rev-parse --symbolic --branches)
+  local all_branches=( $(git rev-parse --symbolic --branches) )
 
   # only look at branches that match these regexes
   if [ $search_all -eq 0 ]; then
