@@ -179,7 +179,7 @@ function git_find_parent_branch() {
     # filter branches by regexes
     local -a candidate_branches=()
     local -A branches_found
-    for branch in $all_branches; do
+    for branch in ${all_branches[@]}; do
       for regex in $regexes; do
         if [[ $branch != $start_branch && $branch =~ $regex && -z "${branches_found[$branch]}" ]]; then
           candidate_branches+=( "$branch" )
