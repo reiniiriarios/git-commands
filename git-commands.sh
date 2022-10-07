@@ -92,11 +92,11 @@ function git_find_branch() {
     git_cmd_err "missing search string, e.g. ISSUE-1234"
     return
   fi
-  local branches=$(git branch --list "*$1*" --format '%(refname:lstrip=-1)')
+  local branches=$(git rev-parse --symbolic --branches | grep "$1")
   local result_source="local"
   if [ -z "$branches" ]; then
     local result_source="remote"
-    local branches=$(git branch -r --list "*$1*" --format '%(refname:lstrip=-1)')
+    local branches=$(git rev-parse --symbolic --branches | grep "$1")
     if [ -z "$branches" ]; then
       git_cmd_err "unable to find branch matching: $1"
       return
