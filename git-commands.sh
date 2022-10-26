@@ -429,8 +429,8 @@ function git_squash_branch() {
     git_cmd_err "no commits to squash"
     return
   fi
-  if [ "$commits" -gt "30" ] && [ "$1" != "-y" ]; then
-    printf "\e[33mAre you sure you want to squash $commits commits? [y/N] \e[0m"
+  if [ "$1" != "-y" ]; then
+    printf "\e[33mSquash $commits commits? [y/N] \e[0m"
     read confirm
     if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
       return
