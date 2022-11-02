@@ -582,6 +582,24 @@ function git_branch_has_remote() {
   false
 }
 
+function git_short_stat_no_images() {
+  local -a extensions=(
+    'png' \
+    'jpg' \
+    'gif' \
+    'svg' \
+    'ttf' \
+    'woff' \
+    'woff2' \
+    'eot' \
+    'pdf'
+  )
+  extensions=$(printf "':!*.%s' " "${extensions[@]}")
+  eval "git --no-pager diff --shortstat $@ -- $extensions"
+}
+alias gshortstatnoimg='git_short_stat_no_images'
+alias gshortstat='git --no-pager diff --shortstat'
+
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
 if [ -d "$HOME/.oh-my-zsh" ]; then
