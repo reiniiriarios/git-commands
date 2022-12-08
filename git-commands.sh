@@ -96,7 +96,7 @@ function git_find_branch() {
   local result_source="local"
   if [ -z "$branches" ]; then
     local result_source="remote"
-    local branches=$(git branch -r --list "*$1*" --format '%(refname:short)')
+    local branches=$(git branch -r --list "*$1*" --format '%(refname:lstrip=-1)')
     if [ -z "$branches" ]; then
       git_cmd_err "unable to find branch matching: $1"
       return
@@ -599,6 +599,11 @@ function git_short_stat_no_images() {
 }
 alias gshortstatnoimg='git_short_stat_no_images'
 alias gshortstat='git --no-pager diff --shortstat'
+
+function gdroplast() {
+  git_cmd_branch_protection || return
+  git reset --hard HEAD^
+}
 
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
