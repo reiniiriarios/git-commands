@@ -594,7 +594,7 @@ function get_rebase_on_branch() {
     git rebase $remote/$branch
   fi
 }
-alias grbb='git_rebase_on_branch'
+alias grob='git_rebase_on_branch'
 
 # reset n commits back
 function git_reset() {
