@@ -27,6 +27,7 @@ Alias|Function|Description
 `gswf`|`git_switch_branch_by_search <search_string>`|`switch` via search string, e.g. `gswf 1234` if branch name has issue number
 `grf`|`git_rebase_forward`|rebase current branch to be up to date with parent
 `grom`|`git_rebase_on_main`|rebase current branch to be up to date with main
+`grob`|`git_rebase_on_branch <search_string>`|rebase current branch on branch found via `git_find_branch`
 `grbn`|`git_rebase_n_commits <n>`|`rebase -i HEAD~$1` _n_ commits
 `gsquash`|`git_squash <n>`|squash _n_ commits via `rebase -i`
 `grn`|`git_reset <n>`|`reset --soft HEAD~$1` _n_ commits and then `reset` to unstage
@@ -40,3 +41,4 @@ Alias|Function|Description
 `gmffthis`|`git_merge_ff_this`|checkout parent and then `merge --ff-only` current branch
 `gwip`|-|commit all currently tracked files with message "WIP"
 `gunwip`|-|reset and unstage last commit if message is "WIP"
+`gbdd`|`git_drop_drop_commits`|drop all commits in current branch with messages beginning with `drop: `
