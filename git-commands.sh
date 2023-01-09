@@ -443,6 +443,31 @@ function git_squash_branch() {
 }
 alias gbsquash='git_squash_branch'
 
+# drop all commits in current branch with messages beginning with 'drop: '
+function git_drop_drop_commits() {
+  git_cmd_branch_protection || return
+
+  local parent=$(git_find_parent_branch)
+  local commits=$(git rev-list --count HEAD ^$parent)
+  if [ "$commits" -lt "1" ]; then
+    git_cmd_err "no commits to rebase"
+    return
+  fi
+
+  local commits_to_drop=$(git log -n $commits --pretty=format:%s | grep -q -c '^drop: ')
+
+  if [ "$1" != "-y" ]; then
+    printf "\e[33mDrop $commits_to_drop commits in current branch? [y/N] \e[0m"
+    read confirm
+    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
+      return
+    fi
+  fi
+
+  GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i '/ drop: / s/pick /drop /g'" git rebase -i HEAD~$commits
+}
+alias gbdd='git_drop_drop_commits'
+
 # reset all commits on branch
 function git_reset_branch() {
   git_cmd_branch_protection || return
