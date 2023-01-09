@@ -359,8 +359,10 @@ function git_merge_ff_this() {
 
   if [ $branch_to_merge ]; then
     local parent=$(git_find_parent_branch)
-    local commits=$(git_commits_out_of_date)
+    local remote=$(git config branch.$parent.remote)
+    git pull $remote $parent
 
+    local commits=$(git_commits_out_of_date)
     if [[ -n "$commits" && "$commits" != 0 ]]; then
       local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
       git_cmd_err "unable to fast-forward merge, out of date with $parent by $commits commit$s"
