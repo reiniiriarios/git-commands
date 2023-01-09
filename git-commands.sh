@@ -556,6 +556,19 @@ function git_rebase_on_main() {
 }
 alias grom='git_rebase_on_main'
 
+# rebase current branch onto another branch by search string
+function get_rebase_on_branch() {
+  git_cmd_branch_protection || return
+
+  local branch=$(git_find_branch $1)
+  if [ -n "$branch" ]; then
+    local remote=$(git config branch.$(branch).remote)
+    git pull $remote $branch
+    git rebase $remote/$branch
+  fi
+}
+alias grbb='git_rebase_on_branch'
+
 # reset n commits back
 function git_reset() {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
