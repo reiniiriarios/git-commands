@@ -454,7 +454,11 @@ function git_drop_drop_commits() {
     return
   fi
 
-  local commits_to_drop=$(git log -n $commits --pretty=format:%s | grep -q -c '^drop: ')
+  local commits_to_drop=$(git log -n $commits --pretty=format:%s | grep -c '^drop: ')
+  if [ "$commits_to_drop" -lt "1" ]; then
+    git_cmd_err "no commits to drop"
+    return
+  fi
 
   if [ "$1" != "-y" ]; then
     printf "\e[33mDrop $commits_to_drop commits in current branch? [y/N] \e[0m"
