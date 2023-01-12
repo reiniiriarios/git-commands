@@ -343,8 +343,7 @@ function git_merge_ff() {
     local commits=$(git_commits_out_of_date $current $branch_to_merge)
 
     if [[ -n "$commits" && "$commits" != 0 ]]; then
-      local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
-      git_cmd_err "unable to fast-forward merge, $branch_to_merge is out of date by $commits commit$s"
+      git_cmd_err "unable to fast-forward merge, $branch_to_merge is out of date by $commits commit(s)"
       return
     fi
 
@@ -364,8 +363,7 @@ function git_merge_ff_this() {
 
     local commits=$(git_commits_out_of_date)
     if [[ -n "$commits" && "$commits" != 0 ]]; then
-      local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
-      git_cmd_err "unable to fast-forward merge, out of date with $parent by $commits commit$s"
+      git_cmd_err "unable to fast-forward merge, out of date with $parent by $commits commit(s)"
       return
     fi
 
@@ -394,8 +392,7 @@ function git_branch_num_commits() {
   else
     local commits=$(git rev-list --count HEAD ^$parent)
   fi
-  local s=$([ "$commits" -gt 1 ] && echo "s" || echo "")
-  printf "\e[33m$commits commit$s\e[0m on \e[32m$current\e[0m\n"
+  printf "\e[33m$commits commit(s)\e[0m on \e[32m$current\e[0m\n"
 }
 alias gbcount='git_branch_num_commits'
 
@@ -461,7 +458,7 @@ function git_drop_drop_commits() {
   fi
 
   if [ "$1" != "-y" ]; then
-    printf "\e[33mDrop $commits_to_drop commits in current branch? [y/N] \e[0m"
+    printf "\e[33mDrop $commits_to_drop commit(s) in current branch? [y/N] \e[0m"
     read confirm
     if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
       return
