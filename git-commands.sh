@@ -422,13 +422,34 @@ alias gbrebase='git_rebase_branch'
 # squash branch (automatically) via interactive rebase
 function git_squash_branch() {
   git_cmd_branch_protection || return
-  
+
+  # count commits in branch
   local parent=$(git_find_parent_branch)
   local commits=$(git rev-list --count HEAD ^$parent)
   if [ "$commits" -lt "2" ]; then
     git_cmd_err "no commits to squash"
     return
   fi
+
+  # drop 'drop:' conventional commits first
+  local commits_to_drop=$(git log -n $commits --pretty=format:%s | grep -c '^drop: ')
+  if [ "$commits_to_drop" -gt "0" ]; then
+    if [ "$1" != "-y" ]; then
+      printf "\e[33mDrop $commits_to_drop commit(s) in current branch? [y/N] \e[0m"
+      read confirm
+    fi
+    if [[ "$1" == "-y" || "$confirm" == 'y' || "$confirm" == 'Y' || "$confirm" == 'yes' ]]; then
+      GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i '/ drop: / s/pick /drop /g'" git rebase -i HEAD~$commits
+
+      # recount commits in branch after drop
+      local commits=$(git rev-list --count HEAD ^$parent)
+      if [ "$commits" -lt "2" ]; then
+        git_cmd_err "no commits to squash after drop"
+        return
+      fi
+    fi
+  fi
+
   if [ "$1" != "-y" ]; then
     printf "\e[33mSquash $commits commits? [y/N] \e[0m"
     read confirm
