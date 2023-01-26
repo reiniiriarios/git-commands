@@ -97,7 +97,7 @@ function git_find_branch() {
   if [ -z "$branches" ]; then
     local result_source="remote"
     # lstrip past the remote name
-    local branches=$(git branch -r --list "*$1*" --format '%(refname:short:lstrip=3)')
+    local branches=$(git branch -r --list "*$1*" --format '%(refname:lstrip=3)')
     if [ -z "$branches" ]; then
       git_cmd_err "unable to find branch matching: $1"
       return
