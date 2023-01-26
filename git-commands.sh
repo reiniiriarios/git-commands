@@ -318,11 +318,8 @@ function git_commits_out_of_date() {
 
 # force push to remote with branch protection
 function git_force_push() {
-  local current_branch=$(git branch --show-current)
-  if [ $current_branch = $(git_main_branch) ]; then
-    git_cmd_err "cannot force push to main"
-    return
-  fi
+  git_cmd_branch_protection_main || return
+
   local remote=$(git config branch.$current_branch.remote)
   git push $remote $current_branch --force-with-lease
 }
@@ -355,6 +352,8 @@ alias gmff='git_merge_ff'
 
 # merge fast-forward only - current branch with git_find_parent_branch()
 function git_merge_ff_this() {
+  git_cmd_branch_protection_main || return
+
   local branch_to_merge=$(git branch --show-current)
 
   if [ $branch_to_merge ]; then
