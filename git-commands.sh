@@ -289,15 +289,15 @@ function git_find_parent_branch() {
 
 # number of commits out of date from parent
 function git_commits_out_of_date() {
-  if [ -z "$1" ]; then
-    local parent=$(git_find_parent_branch $check_branch)
-  else
-    local parent=$1
-  fi
-  if [ -z "$2" ]; then
-    local check_branch=$(git branch --show-current)
-  else
+  if [ -n "$2" ]; then
     local check_branch=$2
+  else
+    local check_branch=$(git branch --show-current)
+  fi
+  if [ -n "$1" ]; then
+    local parent=$1
+  else
+    local parent=$(git_find_parent_branch $check_branch)
   fi
 
   if [[ "$check_branch" == "$parent" ]]; then
