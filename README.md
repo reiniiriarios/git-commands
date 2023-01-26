@@ -42,3 +42,35 @@ Alias|Function|Description
 `gwip`|-|commit all currently tracked files with message "WIP"
 `gunwip`|-|reset and unstage last commit if message is "WIP"
 `gbdd`|`git_drop_drop_commits`|drop all commits in current branch with messages beginning with `drop: `
+
+## Example Workflow Comparison
+
+```sh
+git switch main
+git pull
+git switch ABC-123-jira-made-a-branch-name-just-for-me
+git rebase main
+# Count commits in branch, or copy a commit revision
+git rebase -i HEAD~10
+# Change `pick` to `drop` for any temporary commits, then
+# swap `pick` with `squash` on every commit after the first
+# Rewrite commit message
+git push --force-with-lease
+# Wait for CI
+git switch main
+git merge --ff-only ABC-123-jira-made-a-branch-name-just-for-me
+git push
+```
+
+vs
+
+```sh
+gswf 123
+grom
+gbsquash
+# Rewrite commit message
+gfp
+# Wait for CI
+gmffthis
+gp
+```
