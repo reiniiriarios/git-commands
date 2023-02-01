@@ -359,7 +359,7 @@ function git_merge_ff_this() {
   if [ $branch_to_merge ]; then
     local parent=$(git_find_parent_branch)
     local remote=$(git config branch.$parent.remote)
-    git pull $remote $parent
+    git pull $remote $parent:$parent
 
     local commits=$(git_commits_out_of_date)
     if [[ -n "$commits" && "$commits" != 0 ]]; then
@@ -570,7 +570,7 @@ function git_rebase_forward() {
 
   local parent=$(git_find_parent_branch)
   local remote=$(git config branch.$parent.remote)
-  git pull $remote $parent
+  git pull $remote $parent:$parent
   git rebase $remote/$parent
 }
 alias grf='git_rebase_forward'
@@ -600,7 +600,7 @@ function git_rebase_on_main() {
   git_cmd_branch_protection_main || return
 
   local remote=$(git config branch.$(git_main_branch).remote)
-  git pull $remote $(git_main_branch)
+  git pull $remote $(git_main_branch):$(git_main_branch)
   git rebase $(git_main_branch)
 }
 alias grom='git_rebase_on_main'
@@ -612,8 +612,8 @@ function get_rebase_on_branch() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     local remote=$(git config branch.$(branch).remote)
-    git pull $remote $branch
-    git rebase $remote/$branch
+    git pull $remote $branch:$branch
+    git rebase $branch
   fi
 }
 alias grob='git_rebase_on_branch'
