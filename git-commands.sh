@@ -359,7 +359,7 @@ function git_merge_ff_this() {
   if [ $branch_to_merge ]; then
     local parent=$(git_find_parent_branch)
     local remote=$(git config branch.$parent.remote)
-    git pull $remote $parent:$parent
+    git pull --rebase $remote $parent:$parent
 
     local commits=$(git_commits_out_of_date)
     if [[ -n "$commits" && "$commits" != 0 ]]; then
@@ -570,7 +570,7 @@ function git_rebase_forward() {
 
   local parent=$(git_find_parent_branch)
   local remote=$(git config branch.$parent.remote)
-  git pull $remote $parent:$parent
+  git pull --rebase $remote $parent:$parent
   git rebase $remote/$parent
 }
 alias grf='git_rebase_forward'
@@ -600,7 +600,7 @@ function git_rebase_on_main() {
   git_cmd_branch_protection_main || return
 
   local remote=$(git config branch.$(git_main_branch).remote)
-  git pull $remote $(git_main_branch):$(git_main_branch)
+  git pull --rebase $remote $(git_main_branch):$(git_main_branch)
   git rebase $(git_main_branch)
 }
 alias grom='git_rebase_on_main'
@@ -612,7 +612,7 @@ function get_rebase_on_branch() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     local remote=$(git config branch.$(branch).remote)
-    git pull $remote $branch:$branch
+    git pull --rebase $remote $branch:$branch
     git rebase $branch
   fi
 }
@@ -667,6 +667,8 @@ function gdroplast() {
   git reset --hard HEAD^
 }
 
+alias gl='git pull --rebase'
+
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
 if [ -d "$HOME/.oh-my-zsh" ]; then
@@ -717,9 +719,9 @@ function git_develop_branch() {
 # git pull origin
 function ggl() {
   if ! [ -z "$1" ]; then
-    git pull origin "$1"
+    git pull --rebase origin "$1"
   else
-    git pull origin "$(git rev-parse --abbrev-ref HEAD)"
+    git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)"
   fi
 }
 
@@ -788,8 +790,6 @@ alias ggpush='git push origin "$(git branch --show-current)"'
 alias gignore='git update-index --assume-unchanged'
 alias gunignore='git update-index --no-assume-unchanged'
 alias gignored='git ls-files -v | grep "^[[:lower:]]"'
-
-alias gl='git pull'
 
 alias gd='git diff'
 alias gdca='git diff --cached'
@@ -875,8 +875,8 @@ alias gts='git tag -s'
 alias gtv='git tag | sort -V'
 alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
 
-alias gpr='git pull --rebase'
-alias gup='git pull --rebase'
+# alias gpr='git pull --rebase'
+# alias gup='git pull --rebase'
 alias gupv='git pull --rebase -v'
 alias gupa='git pull --rebase --autostash'
 alias gupav='git pull --rebase --autostash -v'
