@@ -667,6 +667,45 @@ function gdroplast() {
   git reset --hard HEAD^
 }
 
+alias gt='git tag'
+
+# because otherwise i forget to push first, then ci runs wonky if i'm not on a branch
+function git_tag_push() {
+  if [ -z "$1" ]; then
+    git_cmd_err "missing argument for tag to push"
+    return
+  fi
+
+  git push
+  git push origin $1
+}
+alias gtp='git_tag_push'
+
+# move a tag from one commit to another, both locally and on origin
+function git_move_tag() {
+  if [ -z "$1" ]; then
+    git_cmd_err "missing argument for tag to move"
+    return
+  fi
+
+  local num_tags=$(git tag -l "$1" | wc -l)
+  if [ $num_tags -eq 0 ]; then
+    git_cmd_err "tag not found"
+    return
+  elif [ $num_tags -gt 1 ]; then
+    git_cmd_err "multiple tags found"
+    return
+  fi
+
+  local tag_name=$(git tag -l "$1" | head -n 1)
+  git tag -d $tag_name
+  git push origin :refs/tags/$tag_name
+  git tag $tag_name
+  git push
+  git push origin $tag_name
+}
+alias gmt='git_move_tag'
+
 alias gl='git pull --rebase'
 
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------

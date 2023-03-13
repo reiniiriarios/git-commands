@@ -42,6 +42,8 @@ Alias|Function|Description
 `gwip`|-|commit all currently tracked files with message "WIP"
 `gunwip`|-|reset and unstage last commit if message is "WIP"
 `gbdd`|`git_drop_drop_commits`|drop all commits in current branch with messages beginning with `drop: `
+`gmt <tag>`|`git_move_tag`|move tag to current commit both locally and on origin, pushing the current branch first
+`gtp <tag>`|`git_push_tag`|push the current branch, then push the tag to origin
 
 ## Example Workflow Comparison
 
