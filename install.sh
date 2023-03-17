@@ -10,7 +10,7 @@ if [ -n "$WINDIR" ]; then
     printf "\e[32mlinking file\e[0m\n"
     HOME_WIN=$( echo $HOME | sed -E 's#^/(.{1})#\1:#' | sed 's#/#\\#g' )
     SCRIPT_DIR_WIN=$( echo $SCRIPT_DIR | sed -E 's#^/(.{1})#\1:#' | sed 's#/#\\#g' )
-    cmd <<< 'mklink "'$HOME_WIN'\\.git-commands.sh" "'$SCRIPT_DIR_WIN'\\git-commands.sh"' >/dev/null
+    cmd <<< 'runas /user:Administrator "cmd.exe /C mklink \"'$HOME_WIN'\\.git-commands.sh\" \"'$SCRIPT_DIR_WIN'\\git-commands.sh\""' >/dev/null
   else
     printf "\e[36msymlink already exists\e[0m\n"
     printf "  $HOME/.git-commands.sh\n"
@@ -42,7 +42,7 @@ fi
 if grep -Fq "$rcline" "$HOME/$rcfile"; then
   printf "\e[36mscript already installed in $rcfile\e[0m\n"
 else
-  echo "\n$rclinecomment\n$rcline\n" >> "$HOME/$rcfile"
+  printf "\n$rclinecomment\n$rcline\n" >> "$HOME/$rcfile"
   printf "\e[32mscript installed in $rcfile\e[0m\n"
   . "$HOME/$rcfile"
 fi
