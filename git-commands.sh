@@ -278,11 +278,24 @@ function git_find_parent_branch() {
 
   # check if we narrowed to a single result
   if [[ ${#candidate_branches[@]} -gt 1 ]]; then
-    git_cmd_err "unable to narrow parent branch down from the following:"
+    local -a candidates_without_main=()
+
+    # if more than one result, filter out main
     for branch in "${candidate_branches[@]}"; do
-      printf "  $branch\n" >&2
+      if [[ "$branch" != "$(git_main_branch)" ]]; then
+        candidates_without_main+=( $branch )
+      fi
     done
-    return
+    candidate_branches=( "${candidates_without_main[@]}" )
+
+    # if still more than one result, give up
+    if [[ ${#candidate_branches[@]} -gt 1 ]]; then
+      git_cmd_err "unable to narrow parent branch down from the following:"
+      for branch in "${candidate_branches[@]}"; do
+        printf "  $branch\n" >&2
+      done
+      return
+    fi
   fi
 
   # we did it!
