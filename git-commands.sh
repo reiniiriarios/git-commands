@@ -225,6 +225,7 @@ function git_find_parent_branch() {
           | sed "s/ \[.*$//" \
           | sed "s/ /_/g" \
           | sed "s/*/+/g" \
+          | sed "s/-/+/g" \
           | egrep '^_*[^_].*[^_]$' \
           | head -n1 \
           | sed 's/\(.\)/\1\n/g'
