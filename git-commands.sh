@@ -722,6 +722,23 @@ function git_move_tag() {
 }
 alias gmt='git_move_tag'
 
+# get name of dev branch
+function git_develop_branch() {
+  local branches=( $(git rev-parse --symbolic --branches | grep ^dev) )
+  if [[ ${#branches[@]} -gt 1 ]]; then
+    git_cmd_err "multiple dev branches found"
+    if [ ${#branches[@]} -lt 11 ]; then
+      printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
+    fi
+    return
+  elif [[ ${#branches[@]} -lt 1 ]]; then
+    git_cmd_err "no dev branch found"
+    return
+  fi
+
+  echo ${branches[1]}
+}
+
 alias gl='git pull --rebase'
 
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
@@ -756,19 +773,6 @@ function git_main_branch() {
     fi
   done
   echo master
-}
-
-# get name of dev branch
-function git_develop_branch() {
-  command git rev-parse --git-dir &>/dev/null || return
-  local branch
-  for branch in dev devel development; do
-    if command git show-ref -q --verify refs/heads/$branch; then
-      echo $branch
-      return
-    fi
-  done
-  echo develop
 }
 
 # git pull origin
