@@ -783,6 +783,7 @@ alias gav='git add --verbose'
 alias gcb='git checkout -b'
 alias gcm='git checkout $(git_main_branch)'
 alias gco='git checkout'
+alias gcd='git checkout $(git_develop_branch)'
 
 alias gb='git branch'
 alias gba='git branch -a'
