@@ -5,6 +5,22 @@ function git_cmd_err() {
   false
 }
 
+function git_cmd_confirm() {
+  if [ -z "$1" ]; then
+    git_cmd_err "no question to confirm"
+    false
+    return
+  fi
+  printf "\e[33m$@ [y/N]\e[0m "
+  read confirm
+  printf "\n"
+  local conf=$(echo "$confirm" | awk '{print tolower($0)}')
+  if [[ "$conf" == 'y' || "$confirm" == 'yes' ]]; then
+    return
+  fi
+  false
+}
+
 # portable sed by using gnu-sed on macos
 # sed -i -e ... - does not work on OS X as it creates -e backups
 # sed -i'' -e ... - does not work on OS X 10.6 but works on 10.9+
@@ -423,11 +439,7 @@ function git_rebase_branch() {
     return
   fi
   if [ "$commits" -gt "40" ] && [ "$1" != "-y" ]; then
-    printf "\e[33mAre you sure you want to rebase $commits commits? [y/N] \e[0m"
-    read confirm
-    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
-      return
-    fi
+    git_cmd_confirm "Are you sure you want to rebase $commits commits?" || return
   fi
 
   git rebase -i HEAD~$commits
@@ -449,11 +461,7 @@ function git_squash_branch() {
   # drop 'drop:' conventional commits first
   local commits_to_drop=$(git log -n $commits --pretty=format:%s | grep -c '^drop: ')
   if [ "$commits_to_drop" -gt "0" ]; then
-    if [ "$1" != "-y" ]; then
-      printf "\e[33mDrop $commits_to_drop commit(s) in current branch? [y/N] \e[0m"
-      read confirm
-    fi
-    if [[ "$1" == "-y" || "$confirm" == 'y' || "$confirm" == 'Y' || "$confirm" == 'yes' ]]; then
+    if [ "$1" == "-y" || git_cmd_confirm "Drop $commits_to_drop commit(s) in current branch?" ]; then
       GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i '/ drop: / s/pick /drop /g'" git rebase -i HEAD~$commits
 
       # recount commits in branch after drop
@@ -466,11 +474,7 @@ function git_squash_branch() {
   fi
 
   if [ "$1" != "-y" ]; then
-    printf "\e[33mSquash $commits commits? [y/N] \e[0m"
-    read confirm
-    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
-      return
-    fi
+    git_cmd_confirm "Squash $commits commits?" || return
   fi
 
   GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$commits
@@ -495,11 +499,7 @@ function git_drop_drop_commits() {
   fi
 
   if [ "$1" != "-y" ]; then
-    printf "\e[33mDrop $commits_to_drop commit(s) in current branch? [y/N] \e[0m"
-    read confirm
-    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
-      return
-    fi
+    git_cmd_confirm "Drop $commits_to_drop commit(s) in current branch?" || return
   fi
 
   GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i '/ drop: / s/pick /drop /g'" git rebase -i HEAD~$commits
@@ -518,12 +518,7 @@ function git_reset_branch() {
     return
   fi
   if [ "$commits" -gt "30" ] && [ "$1" != "-y" ]; then
-    printf "\e[33mAre you sure you want to reset $commits commits? [y/N] \e[0m"
-    read confirm
-    printf "\n"
-    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
-      return
-    fi
+    git_cmd_confirm "Are you sure you want to reset $commits commits?" || return
   fi
 
   # go back
@@ -549,12 +544,7 @@ function git_squash() {
   fi
 
   if [ "$1" -gt "10" ] || [ "$confirm" -eq 1 ]; then
-    printf "\e[33mAre you sure you want to squash $1 commits? [y/N] \e[0m"
-    read confirm
-    printf "\n"
-    if [[ "$confirm" != 'y' && "$confirm" != 'Y' && "$confirm" != 'yes' ]]; then
-      return
-    fi
+    git_cmd_confirm "Are you sure you want to squash $1 commits?" || return
   fi
 
   GIT_SEQUENCE_EDITOR="$SED_PORTABLE -i 's/pick/squash/g;0,/^squash /s//pick /'" git rebase -i HEAD~$1
