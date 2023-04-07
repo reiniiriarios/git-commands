@@ -37,7 +37,7 @@ function git_cmd_branch_protection() {
   if [ $check_branch = $(git_main_branch) ]; then
     git_cmd_err "this command doesn't work on main"
     return
-  elif [[ "$check_branch" == "develop"* || "$check_branch" == "dev"* ]]; then
+  elif [[ "$check_branch" == "dev"* ]]; then
     git_cmd_err "this command doesn't work on a dev branch"
     return
   elif [[ "$check_branch" == "release"* ]]; then
