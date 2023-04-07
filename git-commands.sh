@@ -15,7 +15,7 @@ function git_cmd_confirm() {
   read confirm
   printf "\n"
   local conf=$(echo "$confirm" | awk '{print tolower($0)}')
-  if [[ "$conf" == 'y' || "$confirm" == 'yes' ]]; then
+  if [[ "$conf" == 'y' || "$conf" == 'yes' ]]; then
     return
   fi
   false
