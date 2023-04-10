@@ -764,15 +764,6 @@ function git_main_branch() {
   echo master
 }
 
-# git pull origin
-function ggl() {
-  if ! [ -z "$1" ]; then
-    git pull --rebase origin "$1"
-  else
-    git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)"
-  fi
-}
-
 alias ga='git add'
 alias gaa='git add --all'
 alias gapa='git add --patch'
@@ -800,12 +791,7 @@ alias gbsr='git bisect reset'
 alias gbss='git bisect start'
 
 alias gc='git commit -v'
-alias gc!='git commit -v --amend'
-alias gcn!='git commit -v --no-edit --amend'
 alias gca='git commit -v -a'
-alias gca!='git commit -v -a --amend'
-alias gcan!='git commit -v -a --no-edit --amend'
-alias gcans!='git commit -v -a -s --no-edit --amend'
 alias gcam='git commit -a -m'
 alias gcsm='git commit -s -m'
 alias gcas='git commit -a -s'
