@@ -13,7 +13,6 @@ function git_cmd_confirm() {
   fi
   printf "\e[33m$@ [y/N]\e[0m "
   read confirm
-  printf "\n"
   local conf=$(echo "$confirm" | awk '{print tolower($0)}')
   if [[ "$conf" == 'y' || "$conf" == 'yes' ]]; then
     return
