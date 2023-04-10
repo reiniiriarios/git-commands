@@ -1,5 +1,10 @@
 #!/bin/bash
 
+function git_cmd() {
+  printf "\e[36m→ git \e[32m$*\e[0m\n"
+  git $*
+}
+
 function git_cmd_err() {
   printf "\e[31merror: $@\e[0m\n" >&2
   false
@@ -76,8 +81,8 @@ function git_remote_reset() {
   fi
   local remote=$(git config branch.$branch.remote)
 
-  git fetch $remote $branch
-  git reset --hard "$remote/$branch"
+  git_cmd fetch $remote $branch
+  git_cmd reset --hard "$remote/$branch"
 }
 alias gremotereset='git_remote_reset'
 
@@ -133,7 +138,7 @@ function git_find_branch() {
 function git_switch_branch_by_search() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
-    git switch $branch
+    git_cmd switch $branch
   fi
 }
 alias gswf='git_switch_branch_by_search'
@@ -142,7 +147,7 @@ alias gswf='git_switch_branch_by_search'
 function git_checkout_branch_by_search() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
-    git checkout $branch
+    git_cmd checkout $branch
   fi
 }
 alias gcof='git_checkout_branch_by_search'
@@ -350,15 +355,13 @@ function git_commits_out_of_date() {
 # force push to remote with branch protection
 function git_force_push() {
   git_cmd_branch_protection_main || return
-
-  local remote=$(git config branch.$current_branch.remote)
-  git push $remote $current_branch --force-with-lease
+  git_cmd push --force-with-lease $*
 }
 alias gfp='git_force_push'
 alias gpf='git_force_push'
 
 # switch to parent branch
-alias gswp='git switch $(git_find_parent_branch)'
+alias gswp='git_cmd switch $(git_find_parent_branch)'
 
 # merge fast forward only
 function git_merge_ff() {
@@ -376,7 +379,7 @@ function git_merge_ff() {
       return
     fi
 
-    git merge --ff-only $branch_to_merge
+    git_cmd merge --ff-only $branch_to_merge
   fi
 }
 alias gmff='git_merge_ff'
@@ -398,8 +401,8 @@ function git_merge_ff_this() {
       return
     fi
 
-    git checkout $parent
-    git merge --ff-only $branch_to_merge
+    git_cmd checkout $parent
+    git_cmd merge --ff-only $branch_to_merge
   fi
 }
 alias gmffthis='git_merge_ff_this'
@@ -410,7 +413,7 @@ function git_rebase_n_commits() {
     git_cmd_err "missing number of commits argument"
     return
   fi
-  git rebase -i HEAD~$1
+  git_cmd rebase -i HEAD~$1
 }
 alias grbn='git_rebase_n_commits'
 
@@ -441,7 +444,7 @@ function git_rebase_branch() {
     git_cmd_confirm "Are you sure you want to rebase $commits commits?" || return
   fi
 
-  git rebase -i HEAD~$commits
+  git_cmd rebase -i HEAD~$commits
 }
 alias gbrebase='git_rebase_branch'
 
@@ -521,9 +524,9 @@ function git_reset_branch() {
   fi
 
   # go back
-  git reset --soft HEAD~$commits
+  git_cmd reset --soft HEAD~$commits
   # and then unstage
-  git reset
+  git_cmd reset
 }
 alias gbreset='git_reset_branch'
 
@@ -575,8 +578,8 @@ function git_rebase_forward() {
 
   local parent=$(git_find_parent_branch)
   local remote=$(git config branch.$parent.remote)
-  git pull --rebase $remote $parent:$parent
-  git rebase $remote/$parent
+  git_cmd pull --rebase $remote $parent:$parent
+  git_cmd rebase $remote/$parent
 }
 alias grf='git_rebase_forward'
 alias grop='git_rebase_forward'
@@ -605,8 +608,8 @@ function git_rebase_on_main() {
   git_cmd_branch_protection_main || return
 
   local remote=$(git config branch.$(git_main_branch).remote)
-  git pull --rebase $remote $(git_main_branch):$(git_main_branch)
-  git rebase $(git_main_branch)
+  git_cmd pull --rebase $remote $(git_main_branch):$(git_main_branch)
+  git_cmd rebase $(git_main_branch)
 }
 alias grom='git_rebase_on_main'
 
@@ -617,8 +620,8 @@ function get_rebase_on_branch() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     local remote=$(git config branch.$(branch).remote)
-    git pull --rebase $remote $branch:$branch
-    git rebase $branch
+    git_cmd pull --rebase $remote $branch:$branch
+    git_cmd rebase $branch
   fi
 }
 alias grob='git_rebase_on_branch'
@@ -630,9 +633,9 @@ function git_reset() {
     return
   fi
   # go back
-  git reset --soft HEAD~$1
+  git_cmd reset --soft HEAD~$1
   # and then unstage
-  git reset
+  git_cmd reset
 }
 alias grn='git_reset'
 
@@ -665,11 +668,11 @@ function git_short_stat_no_images() {
   eval "git --no-pager diff --shortstat $@ -- $extensions"
 }
 alias gshortstatnoimg='git_short_stat_no_images'
-alias gshortstat='git --no-pager diff --shortstat'
+alias gshortstat='git_cmd --no-pager diff --shortstat'
 
 function gdroplast() {
   git_cmd_branch_protection || return
-  git reset --hard HEAD^
+  git_cmd reset --hard HEAD^
 }
 
 alias gt='git tag'
@@ -681,8 +684,8 @@ function git_tag_push() {
     return
   fi
 
-  git push
-  git push origin $1
+  git_cmd push
+  git_cmd push origin $1
 }
 alias gtp='git_tag_push'
 
@@ -703,11 +706,11 @@ function git_move_tag() {
   fi
 
   local tag_name=$(git tag -l "$1" | head -n 1)
-  git tag -d $tag_name
-  git push origin :refs/tags/$tag_name
-  git tag $tag_name
-  git push
-  git push origin $tag_name
+  git_cmd tag -d $tag_name
+  git_cmd push origin :refs/tags/$tag_name
+  git_cmd tag $tag_name
+  git_cmd push
+  git_cmd push origin $tag_name
 }
 alias gmt='git_move_tag'
 
@@ -728,13 +731,7 @@ function git_develop_branch() {
   echo ${branches[1]}
 }
 
-alias gl='git pull --rebase'
-
-# -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
-
-if [ -d "$HOME/.oh-my-zsh" ]; then
-  return
-fi
+alias gl='git_cmd pull --rebase'
 
 # rename branch
 function grename() {
@@ -744,12 +741,18 @@ function grename() {
   fi
 
   # Rename branch locally
-  git branch -m "$1" "$2"
+  git_cmd branch -m "$1" "$2"
   # Rename branch in origin remote
-  if git push origin :"$1"; then
-    git push --set-upstream origin "$2"
+  if git_cmd push origin :"$1"; then
+    git_cmd push --set-upstream origin "$2"
   fi
 }
+
+# -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
+
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  return
+fi
 
 # get name of main branch
 function git_main_branch() {
