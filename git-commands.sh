@@ -734,19 +734,38 @@ function git_develop_branch() {
 alias gl='git_cmd pull --rebase'
 
 # rename branch
-function grename() {
-  if [[ -z "$1" || -z "$2" ]]; then
-    git_cmd_err "usage: grename old_branch new_branch"
+function git_rename_branch() {
+  local old=''
+  local new=''
+  if [[ -n "$1" && -n "$2" ]]; then
+    old=$1
+    new=$2
+    if ! git show-ref --verify --quiet refs/heads/$old; then
+      git_cmd_err "branch \"$old\" not found"
+      return
+    fi
+  elif [[ -n "$1" && -z "$2" ]]; then
+    old=$(git branch --show-current)
+    new=$1
+  else
+    git_cmd_err "usage: grename old_branch new_branch || grename new_branch"
     return
   fi
 
-  # Rename branch locally
-  git_cmd branch -m "$1" "$2"
-  # Rename branch in origin remote
-  if git_cmd push origin :"$1"; then
-    git_cmd push --set-upstream origin "$2"
-  fi
+  # rename branch locally
+  git_cmd branch -m "$old" "$new"
+
+  # rename branch in all remotes
+  local remotes=( $(git remote) )
+  for remote in "${remotes[@]}"; do
+    if git ls-remote --exit-code --heads $remote "$old" >/dev/null; then
+      if git_cmd push origin :"$old"; then
+        git_cmd push --set-upstream $remote "$new"
+      fi
+    fi
+  done
 }
+alias grename='git_rename_branch'
 
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
