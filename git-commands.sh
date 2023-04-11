@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function git_cmd() {
-  printf "\e[36m→ git \e[32m$*\e[0m\n"
+  printf "\e[36m→ git \e[32m$(echo "$@" | sed 's/%/%%/g')\e[0m\n"
   git $*
 }
 
@@ -769,10 +769,6 @@ alias grename='git_rename_branch'
 
 # -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
-  return
-fi
-
 # get name of main branch
 function git_main_branch() {
   command git rev-parse --git-dir &>/dev/null || return
@@ -786,140 +782,140 @@ function git_main_branch() {
   echo master
 }
 
-alias ga='git add'
-alias gaa='git add --all'
-alias gapa='git add --patch'
-alias gau='git add --update'
-alias gav='git add --verbose'
+alias ga='git_cmd add'
+alias gaa='git_cmd add --all'
+alias gapa='git_cmd add --patch'
+alias gau='git_cmd add --update'
+alias gav='git_cmd add --verbose'
 
-alias gcb='git checkout -b'
-alias gcm='git checkout $(git_main_branch)'
-alias gco='git checkout'
-alias gcd='git checkout $(git_develop_branch)'
+alias gcb='git_cmd checkout -b'
+alias gcm='git_cmd checkout $(git_main_branch)'
+alias gco='git_cmd checkout'
+alias gcd='git_cmd checkout $(git_develop_branch)'
 
-alias gb='git branch'
-alias gba='git branch -a'
-alias gbd='git branch -d'
-alias gbD='git branch -D'
-alias gbnm='git branch --no-merged'
-alias gbr='git branch --remote'
+alias gb='git_cmd branch'
+alias gba='git_cmd branch -a'
+alias gbd='git_cmd branch -d'
+alias gbD='git_cmd branch -D'
+alias gbnm='git_cmd branch --no-merged'
+alias gbr='git_cmd branch --remote'
 
-alias gbl='git blame -b -w'
+alias gbl='git_cmd blame -b -w'
 
-alias gbs='git bisect'
-alias gbsb='git bisect bad'
-alias gbsg='git bisect good'
-alias gbsr='git bisect reset'
-alias gbss='git bisect start'
+alias gbs='git_cmd bisect'
+alias gbsb='git_cmd bisect bad'
+alias gbsg='git_cmd bisect good'
+alias gbsr='git_cmd bisect reset'
+alias gbss='git_cmd bisect start'
 
-alias gc='git commit -v'
-alias gca='git commit -v -a'
-alias gcam='git commit -a -m'
-alias gcsm='git commit -s -m'
-alias gcas='git commit -a -s'
-alias gcasm='git commit -a -s -m'
-alias gcmsg='git commit -m'
-alias gcs='git commit -S'
-alias gcss='git commit -S -s'
-alias gcssm='git commit -S -s -m'
+alias gc='git_cmd commit -v'
+alias gca='git_cmd commit -v -a'
+alias gcam='git_cmd commit -a -m'
+alias gcsm='git_cmd commit -s -m'
+alias gcas='git_cmd commit -a -s'
+alias gcasm='git_cmd commit -a -s -m'
+alias gcmsg='git_cmd commit -m'
+alias gcs='git_cmd commit -S'
+alias gcss='git_cmd commit -S -s'
+alias gcssm='git_cmd commit -S -s -m'
 
-alias gcf='git config --list'
+alias gcf='git_cmd config --list'
 
-alias gcl='git clone --recurse-submodules'
+alias gcl='git_cmd clone --recurse-submodules'
 
-alias gcount='git shortlog -sn'
+alias gcount='git_cmd shortlog -sn'
 
-alias gcp='git cherry-pick'
-alias gcpa='git cherry-pick --abort'
-alias gcpc='git cherry-pick --continue'
+alias gcp='git_cmd cherry-pick'
+alias gcpa='git_cmd cherry-pick --abort'
+alias gcpc='git_cmd cherry-pick --continue'
 
-alias gf='git fetch'
-alias gfo='git fetch origin'
-alias gfa='git fetch --all'
-alias gfprune='git fetch --prune'
+alias gf='git_cmd fetch'
+alias gfo='git_cmd fetch origin'
+alias gfa='git_cmd fetch --all'
+alias gfprune='git_cmd fetch --prune'
 
 alias gfg='git ls-files | grep'
 
-alias gignore='git update-index --assume-unchanged'
-alias gunignore='git update-index --no-assume-unchanged'
+alias gignore='git_cmd update-index --assume-unchanged'
+alias gunignore='git_cmd update-index --no-assume-unchanged'
 alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
-alias gd='git diff'
-alias gdca='git diff --cached'
-alias gdcw='git diff --cached --word-diff'
-alias gds='git diff --staged'
-alias gdup='git diff @{upstream}'
-alias gdw='git diff --word-diff'
+alias gd='git_cmdgit diff'
+alias gdca='git_cmd diff --cached'
+alias gdcw='git_cmd diff --cached --word-diff'
+alias gds='git_cmd diff --staged'
+alias gdup='git_cmd diff @{upstream}'
+alias gdw='git_cmd diff --word-diff'
 
-alias gdct='git describe --tags $(git rev-list --tags --max-count=1)'
+alias gdct='git_cmd describe --tags $(git rev-list --tags --max-count=1)'
 
-alias glg='git log --stat'
-alias glgp='git log --stat -p'
-alias glgg='git log --graph'
-alias glgga='git log --graph --decorate --all'
-alias glgm='git log --graph --max-count=10'
-alias glo='git log --oneline --decorate'
-alias glog='git log --oneline --decorate --graph'
-alias gloga='git log --oneline --decorate --graph --all'
+alias glg='git_cmd log --stat'
+alias glgp='git_cmd log --stat -p'
+alias glgg='git_cmd log --graph'
+alias glgga='git_cmd log --graph --decorate --all'
+alias glgm='git_cmd log --graph --max-count=10'
+alias glo='git_cmd log --oneline --decorate'
+alias glog='git_cmd log --oneline --decorate --graph'
+alias gloga='git_cmd log --oneline --decorate --graph --all'
 alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'"
 alias glols="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --stat"
 alias glola="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --all"
 alias glod="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset'"
 alias glods="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset' --date=short"
 
-alias gm='git merge'
-alias gmom='git merge origin/$(git_main_branch)'
-alias gmum='git merge upstream/$(git_main_branch)'
-alias gma='git merge --abort'
+alias gm='git_cmd merge'
+alias gmom='git_cmd merge origin/$(git_main_branch)'
+alias gmum='git_cmd merge upstream/$(git_main_branch)'
+alias gma='git_cmd merge --abort'
 
-alias gmtl='git mergetool --no-prompt'
-alias gmtlvim='git mergetool --no-prompt --tool=vimdiff'
+alias gmtl='git_cmd mergetool --no-prompt'
+alias gmtlvim='git_cmd mergetool --no-prompt --tool=vimdiff'
 
-alias gp='git push'
-alias gpd='git push --dry-run'
-alias gpoat='git push origin --all && git push origin --tags'
-alias gpu='git push upstream'
-alias gpv='git push -v'
+alias gp='git_cmd push'
+alias gpd='git_cmd push --dry-run'
+alias gpoat='git_cmd push origin --all && git push origin --tags'
+alias gpu='git_cmd push upstream'
+alias gpv='git_cmd push -v'
 
-alias grb='git rebase'
-alias grba='git rebase --abort'
-alias grbc='git rebase --continue'
-alias grbi='git rebase -i'
-alias grbo='git rebase --onto'
-alias grbs='git rebase --skip'
+alias grb='git_cmd rebase'
+alias grba='git_cmd rebase --abort'
+alias grbc='git_cmd rebase --continue'
+alias grbi='git_cmd rebase -i'
+alias grbo='git_cmd rebase --onto'
+alias grbs='git_cmd rebase --skip'
 
-alias grev='git revert'
+alias grev='git_cmd revert'
 
-alias grm='git rm'
-alias grmc='git rm --cached'
+alias grm='git_cmd rm'
+alias grmc='git_cmd rm --cached'
 
-alias grs='git restore'
-alias grss='git restore --source'
-alias grst='git restore --staged'
+alias grs='git_cmd restore'
+alias grss='git_cmd restore --source'
+alias grst='git_cmd restore --staged'
 
 alias grt='cd "$(git rev-parse --show-toplevel || echo .)"'
 
-alias gsb='git status -sb'
-alias gss='git status -s'
-alias gst='git status'
+alias gsb='git_cmd status -sb'
+alias gss='git_cmd status -s'
+alias gst='git_cmd status'
 
-alias gsh='git show'
-alias gsps='git show --pretty=short --show-signature'
+alias gsh='git_cmd show'
+alias gsps='git_cmd show --pretty=short --show-signature'
 
-alias gsi='git submodule init'
-alias gsu='git submodule update'
+alias gsi='git_cmd submodule init'
+alias gsu='git_cmd submodule update'
 
-alias gsw='git switch'
-alias gswc='git switch -c'
-alias gswm='git switch $(git_main_branch)'
+alias gsw='git_cmd switch'
+alias gswc='git_cmd switch -c'
+alias gswm='git_cmd switch $(git_main_branch)'
 
-alias gts='git tag -s'
-alias gtv='git tag | sort -V'
+alias gts='git_cmd tag -s'
+alias gtv='git_cmd tag | sort -V'
 alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
 
-alias gupv='git pull --rebase -v'
-alias gupom='git pull --rebase origin $(git_main_branch)'
-alias gupomi='git pull --rebase=interactive origin $(git_main_branch)'
-alias glum='git pull upstream $(git_main_branch)'
+alias gupv='git_cmd pull --rebase -v'
+alias gupom='git_cmd pull --rebase origin $(git_main_branch)'
+alias gupomi='git_cmd pull --rebase=interactive origin $(git_main_branch)'
+alias glum='git_cmd pull upstream $(git_main_branch)'
 
-alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
+alias gwch='git_cmd whatchanged -p --abbrev-commit --pretty=medium'
