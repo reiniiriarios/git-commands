@@ -958,7 +958,7 @@ alias grom='git_rebase_on_main'
 # grob <search_string>
 # git_rebase_on_branch <search_string>
 #   Rebase current branch onto another branch by search string.
-function get_rebase_on_branch() {
+function git_rebase_on_branch() {
   git_cmd_help $1 && return
 
   git_cmd_branch_protection || return
