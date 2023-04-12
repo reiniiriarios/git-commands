@@ -90,7 +90,7 @@ function git_cmd_help() {
   local n=$(grep -n "function $fn_name()" "$GIT_CMDS_FILE_LOCATION" | cut -d : -f 1)
 
   local help=""
-  while ; do
+  while : ; do
     n=$(( n - 1 ))
     local line=$(sed -n $n'p' "$GIT_CMDS_FILE_LOCATION")
     if [[ "$line" = "#"* ]]; then
@@ -126,7 +126,7 @@ function git_cmd_help_alias() {
   fi
 
   local help=""
-  while ; do
+  while : ; do
     n=$(( n - 1 ))
     local line=$(sed -n $n'p' "$GIT_CMDS_FILE_LOCATION")
     if [[ "$line" = "#"* ]]; then
