@@ -25,14 +25,55 @@ function git_cmd_confirm() {
   false
 }
 
+# print comment prefix for calling function if $1 is a help flag
+function git_cmd_help() {
+  if [[ "$1" != "-h" && "$1" != "--help" ]]; then
+    return 1
+  fi
+
+  local this_file="$HOME/.git-commands.sh"
+  # bash || zsh
+  [[ -n $BASH_VERSION ]] && local fn_name="${FUNCNAME[1]}" || local fn_name="${funcstack[@]:1:1}"
+  # find line number of calling fn
+  local n=$(grep -n "function $fn_name()" "$this_file" | cut -d : -f 1)
+
+  # read lines in reverse order from fn line
+  local help=""
+  while ; do
+    n=$(( n - 1 ))
+    local line=$(sed -n $n'p' "$this_file")
+    if [[ "$line" = "#"* ]]; then
+      # prettify each comment line
+      local line=$(printf "$line" | sed 's/^# //')
+      if [[ "$line" != "  "* ]]; then
+        line=$(printf "$line" | sed 's/\(<.*>\)/\\e[35m\1\\e[36m/g' | sed 's/\(\[.*\]\)/\\e[33m\1\\e[36m/g')
+        line="\e[36m$line\e[0m"
+      else
+        line=$(printf "$line" | sed 's/`\(.*\)`/\\e[33m\1\\e[0m/g')
+      fi
+      help="$line\n$help"
+    else
+      # if we run out of comment lines, we're done
+      break
+    fi
+  done
+
+  printf "$help"
+}
+
 # portable sed by using gnu-sed on macos
 # sed -i -e ... - does not work on OS X as it creates -e backups
 # sed -i'' -e ... - does not work on OS X 10.6 but works on 10.9+
 # sed -i '' -e ... - not working on GNU
 [[ "$(uname -s)" == "Darwin"* ]] && SED_PORTABLE="gsed" || SED_PORTABLE="sed"
 
-# err function to protect these branches, to be called by other functions
+# git_cmd_branch_protection || return
+# git_cmd_branch_protection <branch_name> || return
+#   Error function to be called by other functions to prevent those
+#   functions from being called on main, dev, or release branches.
 function git_cmd_branch_protection() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     local check_branch=$(git branch --show-current)
   else
@@ -50,8 +91,13 @@ function git_cmd_branch_protection() {
   fi
 }
 
-# err function to protect main, to be called by other functions
+# git_cmd_branch_protection_main || return
+# git_cmd_branch_protection_main <branch_name> || return
+#   Error function to be called by other functions to prevent those
+#   functions from being called on the main branch.
 function git_cmd_branch_protection_main() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     local check_branch=$(git branch --show-current)
   else
@@ -63,8 +109,12 @@ function git_cmd_branch_protection_main() {
   fi
 }
 
-# reset current branch to remote
+# gremotereset
+# git_remote_reset
+#   Reset current branch to remote.
 function git_remote_reset() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     local branch=$(git branch --show-current)
   else
@@ -86,8 +136,11 @@ function git_remote_reset() {
 }
 alias gremotereset='git_remote_reset'
 
-# number of commits ahead from remote
+# git_commits_ahead
+#   Return number of commits current branch is ahead of remote.
 function git_commits_ahead() {
+  git_cmd_help $1 && return
+
   if git rev-parse --git-dir &>/dev/null; then
     local commits="$(git rev-list --count @{upstream}..HEAD 2>/dev/null)"
     if [[ -n "$commits" && "$commits" != 0 ]]; then
@@ -96,8 +149,11 @@ function git_commits_ahead() {
   fi
 }
 
-# number of commits behind remote
+# git_commits_behind
+#   Return number of commits current branch is behind remote.
 function git_commits_behind() {
+  git_cmd_help $1 && return
+
   if git rev-parse --git-dir &>/dev/null; then
     local commits="$(git rev-list --count HEAD..@{upstream} 2>/dev/null)"
     if [[ -n "$commits" && "$commits" != 0 ]]; then
@@ -106,8 +162,11 @@ function git_commits_behind() {
   fi
 }
 
-# find branch name by search string
+# git_find_branch <search_string>
+#   Find branch name by search string.
 function git_find_branch() {
+  git_cmd_help $1 && return
+
   if [ -z $1 ]; then
     git_cmd_err "missing search string, e.g. ISSUE-1234"
     return
@@ -134,8 +193,12 @@ function git_find_branch() {
   echo $branches
 }
 
-# switch branch by search string, if found, e.g. gswf ISSUE-1234
+# gswf <search_string>
+# git_switch_branch_by_search <search_string>
+#   Switch branch by search string, if found.
 function git_switch_branch_by_search() {
+  git_cmd_help $1 && return
+
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     git_cmd switch $branch
@@ -143,8 +206,12 @@ function git_switch_branch_by_search() {
 }
 alias gswf='git_switch_branch_by_search'
 
-# checkout branch by search string, if found, e.g. gswf ISSUE-1234
+# gcof <search_string>
+# git_checkout_branch_by_search <search_string>
+#   Checkout branch by search string, if found.
 function git_checkout_branch_by_search() {
+  git_cmd_help $1 && return
+
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     git_cmd checkout $branch
@@ -152,18 +219,23 @@ function git_checkout_branch_by_search() {
 }
 alias gcof='git_checkout_branch_by_search'
 
-# find parent branch of $1, or current branch if $1 is empty
-# usage: git_find_parent_branch
-#        git_find_parent_branch branch_name
-#        git_find_parent_branch -a branch_name
-# ------------------------------------------------------------
-# in the following example, 'release-20' would be returned
-#           E---F---G  current-branch
+# git_find_parent_branch
+# git_find_parent_branch [-a] <branch_name>
+#   Find parent branch. Default behavior filters branches
+#   by regex, searching for main, dev, or release branches.
+#   
+#   `-a`  Search all branches instead of limiting by regex.
+#   
+#   In the following example, 'release-20' would be returned:
+#   
+#             E---F---G  current-branch
+#            /
+#           C---D  release-20, feat--something
 #          /
-#         C---D  release-20, feat--something
-#        /
-#   A---B  main
+#     A---B  main
 function git_find_parent_branch() {
+  git_cmd_help $1 && return
+
   # whether to search all branches or limit by regex (listed below)
   if [ "$1" = "-a" ] || [ "$1" = "--all" ]; then
     local search_all=1
@@ -323,8 +395,13 @@ function git_find_parent_branch() {
   echo "${candidate_branches[@]}"
 }
 
-# number of commits out of date from parent
+# git_commits_out_of_date
+# git_commits_out_of_date <branch_name>
+# git_commits_out_of_date <branch_name> <parent_branch>
+#   Return number of commits branch is out of date from parent.
 function git_commits_out_of_date() {
+  git_cmd_help $1 && return
+
   if [ -n "$2" ]; then
     local check_branch=$2
   else
@@ -352,8 +429,13 @@ function git_commits_out_of_date() {
   fi
 }
 
-# force push to remote with branch protection
+# gfp
+# gfp [..]
+# git_force_push [..]
+#   Force push with lease to remote with branch protection.
 function git_force_push() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection_main || return
   git_cmd push --force-with-lease $*
 }
@@ -363,8 +445,12 @@ alias gpf='git_force_push'
 # switch to parent branch
 alias gswp='git_cmd switch $(git_find_parent_branch)'
 
-# merge fast forward only
+# gmff <branch_name>
+# git_merge_ff <branch_name>
+#   Merge current branch with given branch, fast forward only.
 function git_merge_ff() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     git_cmd_err "missing argument for which branch to merge"
   fi
@@ -384,8 +470,12 @@ function git_merge_ff() {
 }
 alias gmff='git_merge_ff'
 
-# merge fast-forward only - current branch with git_find_parent_branch()
+# gmffthis
+# git_merge_ff_this
+#   Merge current branch with parent branch, fast forward only.
 function git_merge_ff_this() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection_main || return
 
   local branch_to_merge=$(git branch --show-current)
@@ -407,8 +497,12 @@ function git_merge_ff_this() {
 }
 alias gmffthis='git_merge_ff_this'
 
-# rebase interactively n commits back
+# grbn <n>
+# git_rebase_n_commits <n>
+#   Rebase interactively `n` commits back from HEAD.
 function git_rebase_n_commits() {
+  git_cmd_help $1 && return
+
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits argument"
     return
@@ -417,8 +511,13 @@ function git_rebase_n_commits() {
 }
 alias grbn='git_rebase_n_commits'
 
-# show the number of commits on a branch based on git_find_parent_branch()
+# gbcount
+# git_branch_num_commits
+#   Count number of commits on current branch,
+#   based on search for parent branch.
 function git_branch_num_commits() {
+  git_cmd_help $1 && return
+
   local current=$(git branch --show-current)
   local parent=$(git_find_parent_branch 2>/dev/null)
   if [ -z $parent ]; then
@@ -430,8 +529,13 @@ function git_branch_num_commits() {
 }
 alias gbcount='git_branch_num_commits'
 
-# interactively rebase all commits on current branch
+# gbrebase
+# git_rebase_branch
+#   Interactively rebase all commits on current branch,
+#   based on search for parent branch.
 function git_rebase_branch() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
   
   local parent=$(git_find_parent_branch)
@@ -448,8 +552,14 @@ function git_rebase_branch() {
 }
 alias gbrebase='git_rebase_branch'
 
-# squash branch (automatically) via interactive rebase
+# gbsquash
+# git_squash_branch
+#   Squash branch (automatically) via interactive rebase.
+#   If commits beginning with 'drop: ' are found, the
+#   option to automatically drop them is given.
 function git_squash_branch() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   # count commits in branch
@@ -483,8 +593,13 @@ function git_squash_branch() {
 }
 alias gbsquash='git_squash_branch'
 
-# drop all commits in current branch with messages beginning with 'drop: '
+# gbdd
+# git_drop_drop_commits
+#   Drop all commits in current branch with commit
+#   messages beginning with 'drop: '.
 function git_drop_drop_commits() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
@@ -508,8 +623,12 @@ function git_drop_drop_commits() {
 }
 alias gbdd='git_drop_drop_commits'
 
-# reset all commits on branch
+# gbreset
+# git_reset_branch
+#   Soft reset and unstage all commits on current branch.
 function git_reset_branch() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
@@ -530,8 +649,12 @@ function git_reset_branch() {
 }
 alias gbreset='git_reset_branch'
 
-# squash n commits
+# gsquash <n>
+# git_squash <n>
+#   Automatically squash `n` commits via interactive rebase.
 function git_squash() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   local confirm=0
@@ -553,27 +676,35 @@ function git_squash() {
 }
 alias gsquash='git_squash'
 
-# rebase current branch onto parent branch based on git_find_parent_branch()
-#       A---B---C current-branch
-#      /
-# D---E---F---G parent
-#         ==>>
-#               A'--B'--C' current-branch
-#              /
-# D---E---F---G parent
-# ---------------------------------------
-#         A---B current-branch
+# grf
+# grop
+# git_rebase_forward
+#   Rebase current branch onto parent branch based
+#   on search for parent branch.
+#  
+#         A---B---C current-branch
 #        /
-#       C---D release-7
-#      /
-# E---F---G main
-#       ==>>
-#             A'---B' current-branch
-#            /
-#       C---D release-7
-#      /
-# E---F---G main
+#   D---E---F---G parent
+#           ==>
+#                 A'--B'--C' current-branch
+#                /
+#   D---E---F---G parent
+#   _______________________________________
+#  
+#           A---B current-branch
+#          /
+#         C---D release-7
+#        /
+#   E---F---G main
+#         ==>
+#               A'---B' current-branch
+#              /
+#         C---D release-7
+#        /
+#   E---F---G main
 function git_rebase_forward() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
@@ -584,27 +715,33 @@ function git_rebase_forward() {
 alias grf='git_rebase_forward'
 alias grop='git_rebase_forward'
 
-# rebase current branch onto main branch
-#       A---B---C current-branch
-#      /
-# D---E---F---G main
-#         ==>>
-#               A'--B'--C' current-branch
-#              /
-# D---E---F---G main
-# ---------------------------------------
-#         A---B current-branch
+# grom
+# git_rebase_on_main
+#   Rebase current branch onto main branch.
+#   
+#         A---B---C current-branch
 #        /
-#       C---D another-branch
-#      /
-# E---F---G main
-#       ==>>
+#   D---E---F---G main
+#           ==>
+#                 A'--B'--C' current-branch
+#                /
+#   D---E---F---G main
+#   _______________________________________
+#   
+#           A---B current-branch
+#          /
+#         C---D another-branch
+#        /
+#   E---F---G main
+#         ==>
 #           C---D another-branch
 #          /
-#        /  C'--A'--B' current-branch
-#      /   /
-# E---F---G main
+#         /   C'--A'--B' current-branch
+#        /   /
+#   E---F---G main
 function git_rebase_on_main() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection_main || return
 
   local remote=$(git config branch.$(git_main_branch).remote)
@@ -613,8 +750,12 @@ function git_rebase_on_main() {
 }
 alias grom='git_rebase_on_main'
 
-# rebase current branch onto another branch by search string
+# grob <search_string>
+# git_rebase_on_branch <search_string>
+#   Rebase current branch onto another branch by search string.
 function get_rebase_on_branch() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
 
   local branch=$(git_find_branch $1)
@@ -626,8 +767,12 @@ function get_rebase_on_branch() {
 }
 alias grob='git_rebase_on_branch'
 
-# reset n commits back
+# grn <n>
+# git_reset <n>
+#   Soft reset and unstage `n` commits back from HEAD.
 function git_reset() {
+  git_cmd_help $1 && return
+
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     git_cmd_err "missing number of commits argument"
     return
@@ -639,20 +784,40 @@ function git_reset() {
 }
 alias grn='git_reset'
 
-# add wip commit
-alias gwip='git add -A; git commit --no-verify -m "WIP"'
+# gwip
+#   Add all current changes to WIP commit.
+function gwip() {
+  git_cmd_help $1 && return
 
-# reset last commit if message contains 'WIP'
-alias gunwip='git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1'
+  git_cmd add -A
+  git_cmd commit --no-verify -m "WIP"
+}
 
-# whether a branch has a remote set
+# gunwip
+#   Reset last commit if message contains 'WIP'.
+function gunwip() {
+  git_cmd_help $1 && return
+
+  git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1
+}
+
+# git_branch_has_remote <branch_name>
+#   Return whether a branch has a remote set.
 function git_branch_has_remote() {
+  git_cmd_help $1 && return
+
   local remote=$(git config branch.$1.remote)
   ! [ -z $remote ] && return
   false
 }
 
+# gshortstatnoimg
+# git_short_stat_no_images
+#   Return a short stat diff, filtering out common
+#   image filetypes.
 function git_short_stat_no_images() {
+  git_cmd_help $1 && return
+
   local -a extensions=(
     'png' \
     'jpg' \
@@ -670,15 +835,23 @@ function git_short_stat_no_images() {
 alias gshortstatnoimg='git_short_stat_no_images'
 alias gshortstat='git_cmd --no-pager diff --shortstat'
 
+# gdroplast
+#   Drop (hard reset) the last commit back from HEAD.
 function gdroplast() {
+  git_cmd_help $1 && return
+
   git_cmd_branch_protection || return
   git_cmd reset --hard HEAD^
 }
 
 alias gt='git tag'
 
-# because otherwise i forget to push first, then ci runs wonky if i'm not on a branch
+# gtp <tag_name>
+# git_tag_push <tag_name>
+#   Push current branch, then push tag.
 function git_tag_push() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     git_cmd_err "missing argument for tag to push"
     return
@@ -689,8 +862,13 @@ function git_tag_push() {
 }
 alias gtp='git_tag_push'
 
-# move a tag from one commit to another, both locally and on origin
+# gmt <tag_name>
+# git_move_tag <tag_name>
+#   Move a tag from one commit to another, both
+#   locally and on origin.
 function git_move_tag() {
+  git_cmd_help $1 && return
+
   if [ -z "$1" ]; then
     git_cmd_err "missing argument for tag to move"
     return
@@ -714,8 +892,11 @@ function git_move_tag() {
 }
 alias gmt='git_move_tag'
 
-# get name of dev branch
+# git_develop_branch
+#   Get the name of the first develop branch found.
 function git_develop_branch() {
+  git_cmd_help $1 && return
+
   local branches=( $(git rev-parse --symbolic --branches | grep ^dev) )
   if [[ ${#branches[@]} -gt 1 ]]; then
     git_cmd_err "multiple dev branches found"
@@ -733,8 +914,13 @@ function git_develop_branch() {
 
 alias gl='git_cmd pull --rebase'
 
-# rename branch
+# grename <new_branch_name>
+# grename <branch_name> <new_branch_name>
+# git_rename_branch <branch_name> <new_branch_name>
+#   Rename a branch both locally and on origin.
 function git_rename_branch() {
+  git_cmd_help $1 && return
+
   local old=''
   local new=''
   if [[ -n "$1" && -n "$2" ]]; then
@@ -767,10 +953,11 @@ function git_rename_branch() {
 }
 alias grename='git_rename_branch'
 
-# -------------------- Functions and aliases from oh-my-zsh (not comprehensive) --------------------
-
-# get name of main branch
+# git_main_branch
+#   Get the name of the main branch.
 function git_main_branch() {
+  git_cmd_help $1 && return
+
   command git rev-parse --git-dir &>/dev/null || return
   local ref
   for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk}; do
@@ -781,6 +968,8 @@ function git_main_branch() {
   done
   echo master
 }
+
+# -------------------- Aliases from oh-my-zsh --------------------
 
 alias ga='git_cmd add'
 alias gaa='git_cmd add --all'
