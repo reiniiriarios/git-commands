@@ -16,6 +16,19 @@ Clone repo and...
 - adds `[ -s "$HOME/.git-commands.sh" ] && . "$HOME/.git-commands.sh"` to `.bashrc` or `.zshrc`
 - on macOS, installs [gnu-sed](https://formulae.brew.sh/formula/gnu-sed) if not found
 
+## Help
+
+The `gcmd` command provides a help interface for these shortcuts. Most functions also have a `-h`
+flag available to display help.
+
+Command|Description
+---|---
+`gcmd -f`|Display help for common functions.
+`gcmd -l`|Display help for helper functions.
+`gcmd -a`|Display help for aliases.
+`gcmd -h <alias_name>`|Display help for an alias.
+`<function_name> -h`|Display help for a function.
+
 ## Highlights
 
 Alias|Function|Description
