@@ -1237,22 +1237,10 @@ alias gbss='git_cmd bisect start'
 alias gc='git_cmd commit -v'
 # git commit -v -a
 alias gca='git_cmd commit -v -a'
-# git commit -a -m
-alias gcam='git_cmd commit -a -m'
-# git commit -s -m
-alias gcsm='git_cmd commit -s -m'
-# git commit -a -s
-alias gcas='git_cmd commit -a -s'
-# git commit -a -s -m
-alias gcasm='git_cmd commit -a -s -m'
+# git commit --amend
+alias gcam='git_cmd commit --amend'
 # git commit -m
 alias gcmsg='git_cmd commit -m'
-# git commit -S
-alias gcs='git_cmd commit -S'
-# git commit -S -s
-alias gcss='git_cmd commit -S -s'
-# git commit -S -s -m
-alias gcssm='git_cmd commit -S -s -m'
 
 # git config --list
 alias gcf='git_cmd config --list'
