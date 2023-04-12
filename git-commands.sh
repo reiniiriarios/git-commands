@@ -2,6 +2,14 @@
 
 GIT_CMDS_FILE_LOCATION="$HOME/.git-commands.sh"
 
+# portable sed by using gnu-sed on macos
+# sed -i -e ... - does not work on OS X as it creates -e backups
+# sed -i'' -e ... - does not work on OS X 10.6 but works on 10.9+
+# sed -i '' -e ... - not working on GNU
+[[ "$(uname -s)" == "Darwin"* ]] && SED_PORTABLE="gsed" || SED_PORTABLE="sed"
+
+#---------------------------- internal ----------------------------
+
 function git_cmd() {
   printf "\e[36m→ git \e[32m$(echo "$@" | sed 's/%/%%/g')\e[0m\n"
   git $*
@@ -26,6 +34,50 @@ function git_cmd_confirm() {
   fi
   false
 }
+
+# git_cmd_branch_protection || return
+# git_cmd_branch_protection <branch_name> || return
+#   Error function to be called by other functions to prevent those
+#   functions from being called on main, dev, or release branches.
+function git_cmd_branch_protection() {
+  git_cmd_help $1 && return
+
+  if [ -z "$1" ]; then
+    local check_branch=$(git branch --show-current)
+  else
+    local check_branch=$1
+  fi
+  if [ $check_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return
+  elif [[ "$check_branch" == "dev"* ]]; then
+    git_cmd_err "this command doesn't work on a dev branch"
+    return
+  elif [[ "$check_branch" == "release"* ]]; then
+    git_cmd_err "this command doesn't work on a release branch"
+    return
+  fi
+}
+
+# git_cmd_branch_protection_main || return
+# git_cmd_branch_protection_main <branch_name> || return
+#   Error function to be called by other functions to prevent those
+#   functions from being called on the main branch.
+function git_cmd_branch_protection_main() {
+  git_cmd_help $1 && return
+
+  if [ -z "$1" ]; then
+    local check_branch=$(git branch --show-current)
+  else
+    local check_branch=$1
+  fi
+  if [ $check_branch = $(git_main_branch) ]; then
+    git_cmd_err "this command doesn't work on main"
+    return
+  fi
+}
+
+#---------------------------- help ----------------------------
 
 # print comment prefix for calling function if $1 is a help flag
 function git_cmd_help() {
@@ -191,11 +243,14 @@ function git_cmd_help_aliases() {
     "gaa" \
     "gcm" \
     "gcd" \
+    "gcpb" \
     "gco" \
     "gcb" \
     "gsw" \
     "gswc" \
     "gswm" \
+    "gswd" \
+    "gswp" \
     "gb" \
     "gba" \
     "gbd" \
@@ -260,53 +315,7 @@ function git_cmd_help_aliases() {
   fi
 }
 
-# portable sed by using gnu-sed on macos
-# sed -i -e ... - does not work on OS X as it creates -e backups
-# sed -i'' -e ... - does not work on OS X 10.6 but works on 10.9+
-# sed -i '' -e ... - not working on GNU
-[[ "$(uname -s)" == "Darwin"* ]] && SED_PORTABLE="gsed" || SED_PORTABLE="sed"
-
-# git_cmd_branch_protection || return
-# git_cmd_branch_protection <branch_name> || return
-#   Error function to be called by other functions to prevent those
-#   functions from being called on main, dev, or release branches.
-function git_cmd_branch_protection() {
-  git_cmd_help $1 && return
-
-  if [ -z "$1" ]; then
-    local check_branch=$(git branch --show-current)
-  else
-    local check_branch=$1
-  fi
-  if [ $check_branch = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  elif [[ "$check_branch" == "dev"* ]]; then
-    git_cmd_err "this command doesn't work on a dev branch"
-    return
-  elif [[ "$check_branch" == "release"* ]]; then
-    git_cmd_err "this command doesn't work on a release branch"
-    return
-  fi
-}
-
-# git_cmd_branch_protection_main || return
-# git_cmd_branch_protection_main <branch_name> || return
-#   Error function to be called by other functions to prevent those
-#   functions from being called on the main branch.
-function git_cmd_branch_protection_main() {
-  git_cmd_help $1 && return
-
-  if [ -z "$1" ]; then
-    local check_branch=$(git branch --show-current)
-  else
-    local check_branch=$1
-  fi
-  if [ $check_branch = $(git_main_branch) ]; then
-    git_cmd_err "this command doesn't work on main"
-    return
-  fi
-}
+#---------------------------- functions ----------------------------
 
 # gremotereset
 # git_remote_reset
@@ -640,9 +649,6 @@ function git_force_push() {
 }
 alias gfp='git_force_push'
 alias gpf='git_force_push'
-
-# switch to parent branch
-alias gswp='git_cmd switch $(git_find_parent_branch)'
 
 # gmff <branch_name>
 # git_merge_ff <branch_name>
@@ -1169,7 +1175,9 @@ function git_main_branch() {
   echo master
 }
 
-# -------------------- Aliases from oh-my-zsh --------------------
+#---------------------------- aliases ----------------------------
+
+# most of these are from oh-my-zsh
 
 # git tag
 alias gt='git tag'
@@ -1195,6 +1203,8 @@ alias gcm='git_cmd checkout $(git_main_branch)'
 alias gco='git_cmd checkout'
 # git checkout (dev branch)
 alias gcd='git_cmd checkout $(git_develop_branch)'
+# git checkout (parent branch)
+alias gcpb='git_cmd switch $(git_find_parent_branch)'
 
 # git branch
 alias gb='git_cmd branch'
@@ -1374,6 +1384,10 @@ alias gsw='git_cmd switch'
 alias gswc='git_cmd switch -c'
 # git switch (main branch)
 alias gswm='git_cmd switch $(git_main_branch)'
+# git switch (main branch)
+alias gswd='git_cmd switch $(git_develop_branch)'
+# git switch (parent branch)
+alias gswp='git_cmd switch $(git_find_parent_branch)'
 
 # git tag -s
 alias gts='git_cmd tag -s'
