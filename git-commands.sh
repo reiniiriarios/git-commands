@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GIT_CMDS_FILE_LOCATION="$HOME/.git-commands.sh"
+
 function git_cmd() {
   printf "\e[36m→ git \e[32m$(echo "$@" | sed 's/%/%%/g')\e[0m\n"
   git $*
@@ -30,18 +32,15 @@ function git_cmd_help() {
   if [[ "$1" != "-h" && "$1" != "--help" ]]; then
     return 1
   fi
-
-  local this_file="$HOME/.git-commands.sh"
-  # bash || zsh
+  # find calling function, bash || zsh
   [[ -n $BASH_VERSION ]] && local fn_name="${FUNCNAME[1]}" || local fn_name="${funcstack[@]:1:1}"
   # find line number of calling fn
-  local n=$(grep -n "function $fn_name()" "$this_file" | cut -d : -f 1)
+  local n=$(grep -n "function $fn_name()" "$GIT_CMDS_FILE_LOCATION" | cut -d : -f 1)
 
-  # read lines in reverse order from fn line
   local help=""
   while ; do
     n=$(( n - 1 ))
-    local line=$(sed -n $n'p' "$this_file")
+    local line=$(sed -n $n'p' "$GIT_CMDS_FILE_LOCATION")
     if [[ "$line" = "#"* ]]; then
       # prettify each comment line
       local line=$(printf "$line" | sed 's/^# //')
@@ -59,6 +58,206 @@ function git_cmd_help() {
   done
 
   printf "$help"
+}
+
+# display help for an alias
+function git_cmd_help_alias() {
+  if [[ -z "$1" ]]; then
+    git_cmd_err "alias not specified"
+    return
+  fi
+  # find line number of alias
+  local n=$(grep -n "alias $1=" "$GIT_CMDS_FILE_LOCATION" | cut -d : -f 1)
+  if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+    git_cmd_err "alias not found"
+    return
+  fi
+
+  local help=""
+  while ; do
+    n=$(( n - 1 ))
+    local line=$(sed -n $n'p' "$GIT_CMDS_FILE_LOCATION")
+    if [[ "$line" = "#"* ]]; then
+      local line=$(printf "$line" | sed 's/^# /  /')
+      help="$line\n$help"
+    else
+      # if we run out of comment lines, we're done
+      break
+    fi
+  done
+
+  if [ -z "$help" ]; then
+    git_cmd_err "no documentation found"
+    return
+  fi
+
+  printf "\e[36m$1\e[0m\n"
+  printf "$help"
+}
+
+# help function
+function git_cmd_info() {
+  if [[ "$1" == "-f" || "$1" == "--functions" ]]; then
+    git_cmd_help_functions
+  elif [[ "$1" == "-l" || "$1" == "--helpers" ]]; then
+    git_cmd_help_helpers
+  elif [[ "$1" == "-a" || "$1" == "--all" ]]; then
+    git_cmd_help_aliases
+  elif [[ "$1" == "-h" || "$1" == "--help" || "$1" == "--alias" ]]; then
+    git_cmd_help_alias $2
+  else
+    printf "\e[30mGIT BASH SHORTCUTS\e[0m\n"
+    printf "\e[36mgcmd \e[33m-f\e[0m                Display help for common functions.\n"
+    printf "\e[36mgcmd \e[33m-l\e[0m                Display help for helper functions.\n"
+    printf "\e[36mgcmd \e[33m-a\e[0m                Display help for aliases.\n"
+    printf "\e[36mgcmd \e[33m-h \e[37m<alias_name>\e[0m   Display help for an alias.\n"
+    printf "\e[37m<function_name> \e[33m-h\e[0m     Display help for a function.\n"
+  fi
+}
+alias gcmd='git_cmd_info'
+alias gcmds='git_cmd_info'
+
+# info on common functions
+function git_cmd_help_functions() {
+  local -a functions=( \
+    "git_force_push" \
+    "git_switch_branch_by_search" \
+    "git_checkout_branch_by_search" \
+    "git_rebase_n_commits" \
+    "git_rebase_branch" \
+    "git_rebase_forward" \
+    "git_rebase_on_main" \
+    "git_rebase_on_branch" \
+    "git_squash" \
+    "git_squash_branch" \
+    "git_drop_drop_commits" \
+    "git_merge_ff" \
+    "git_merge_ff_this" \
+    "git_reset" \
+    "git_reset_branch" \
+    "git_drop_last" \
+    "git_remote_reset" \
+    "git_wip" \
+    "git_wip_undo" \
+    "git_rename_branch" \
+    "git_tag_push" \
+    "git_move_tag" \
+    "git_branch_num_commits" \
+  )
+
+  local help=""
+  for function in "${functions[@]}"; do
+    help="$help$($function -h)\n\n"
+  done
+  help="\e[30mCOMMON FUNCTIONS\e[0m\n\n$help"
+
+  if [[ "$1" == "-e" ]]; then
+    printf "$help"
+  else
+    printf "$help" | less
+  fi
+}
+
+# info on helper functions
+function git_cmd_help_helpers() {
+  local -a functions=( \
+    "git_find_branch" \
+    "git_find_parent_branch" \
+    "git_commits_out_of_date" \
+    "git_commits_ahead" \
+    "git_commits_behind" \
+    "git_main_branch" \
+    "git_develop_branch" \
+  )
+
+  local help=""
+  for function in "${functions[@]}"; do
+    help="$help$($function -h)\n\n"
+  done
+  help="\e[30mHELPER FUNCTIONS\e[0m\n\n$help"
+
+  if [[ "$1" == "-e" ]]; then
+    printf "$help"
+  else
+    printf "$help" | less
+  fi
+}
+
+# info on aliases
+function git_cmd_help_aliases() {
+  local -a aliases=( \
+    "gp" \
+    "ga" \
+    "gaa" \
+    "gcm" \
+    "gcd" \
+    "gco" \
+    "gcb" \
+    "gsw" \
+    "gswc" \
+    "gswm" \
+    "gb" \
+    "gba" \
+    "gbd" \
+    "gbnm" \
+    "gbr" \
+    "gbl" \
+    "gf" \
+    "gfo" \
+    "gfa" \
+    "gfprune" \
+    "gl" \
+    "gc" \
+    "gca" \
+    "gcam" \
+    "gcmsg" \
+    "gcf" \
+    "gcount" \
+    "grb" \
+    "grbi" \
+    "grba" \
+    "grbc" \
+    "grbs" \
+    "gcp" \
+    "gcpa" \
+    "gcpc" \
+    "gbs" \
+    "gbsb" \
+    "gbsg" \
+    "gbsr" \
+    "gbss" \
+    "gfg" \
+    "gd" \
+    "gdw" \
+    "gsb" \
+    "gss" \
+    "gst" \
+    "grt" \
+    "gcl" \
+    "gsi" \
+    "gsu" \
+    "glo" \
+    "glog" \
+    "gloga" \
+    "glol" \
+    "glols" \
+    "glola" \
+    "glod" \
+    "glods" \
+    "gt" \
+  )
+
+  local help=""
+  for alias in "${aliases[@]}"; do
+    help="$help$(git_cmd_help_alias $alias)\n"
+  done
+  help="\e[30mALIASES\e[0m\n\n$help"
+
+  if [[ "$1" == "-e" ]]; then
+    printf "$help"
+  else
+    printf "$help" | less
+  fi
 }
 
 # portable sed by using gnu-sed on macos
@@ -785,21 +984,25 @@ function git_reset() {
 alias grn='git_reset'
 
 # gwip
-#   Add all current changes to WIP commit.
-function gwip() {
+# git_wip
+#   Commit all current changes to WIP commit.
+function git_wip() {
   git_cmd_help $1 && return
 
   git_cmd add -A
   git_cmd commit --no-verify -m "WIP"
 }
+alias gwip='git_wip'
 
 # gunwip
+# git_wip_undo
 #   Reset last commit if message contains 'WIP'.
-function gunwip() {
+function git_wip_undo() {
   git_cmd_help $1 && return
 
   git log -n 1 --pretty=format:%s | grep -q -c "WIP" && git_reset 1
 }
+alias gunwip='git_wip_undo'
 
 # git_branch_has_remote <branch_name>
 #   Return whether a branch has a remote set.
@@ -811,10 +1014,9 @@ function git_branch_has_remote() {
   false
 }
 
-# gshortstatnoimg
-# git_short_stat_no_images
-#   Return a short stat diff, filtering out common
-#   image filetypes.
+# gshortstatnoimg <commit_sha> <another_commit_sha>
+# git_short_stat_no_images <commit_sha> <another_commit_sha>
+#   Return a short stat diff, filtering out common image filetypes.
 function git_short_stat_no_images() {
   git_cmd_help $1 && return
 
@@ -836,15 +1038,15 @@ alias gshortstatnoimg='git_short_stat_no_images'
 alias gshortstat='git_cmd --no-pager diff --shortstat'
 
 # gdroplast
+# git_drop_last
 #   Drop (hard reset) the last commit back from HEAD.
-function gdroplast() {
+function git_drop_last() {
   git_cmd_help $1 && return
 
   git_cmd_branch_protection || return
   git_cmd reset --hard HEAD^
 }
-
-alias gt='git tag'
+alias gdroplast='git_drop_last'
 
 # gtp <tag_name>
 # git_tag_push <tag_name>
@@ -912,8 +1114,6 @@ function git_develop_branch() {
   echo ${branches[1]}
 }
 
-alias gl='git_cmd pull --rebase'
-
 # grename <new_branch_name>
 # grename <branch_name> <new_branch_name>
 # git_rename_branch <branch_name> <new_branch_name>
@@ -971,133 +1171,211 @@ function git_main_branch() {
 
 # -------------------- Aliases from oh-my-zsh --------------------
 
+# git tag
+alias gt='git tag'
+# git pull --rebase
+alias gl='git_cmd pull --rebase'
+
+# git add
 alias ga='git_cmd add'
+# git add --all
 alias gaa='git_cmd add --all'
+# git add --patch
 alias gapa='git_cmd add --patch'
+# git add --patupdatech
 alias gau='git_cmd add --update'
+# git add --verbose
 alias gav='git_cmd add --verbose'
 
+# git checkout -b
 alias gcb='git_cmd checkout -b'
+# git checkout (main branch)
 alias gcm='git_cmd checkout $(git_main_branch)'
+# git checkout
 alias gco='git_cmd checkout'
+# git checkout (dev branch)
 alias gcd='git_cmd checkout $(git_develop_branch)'
 
+# git branch
 alias gb='git_cmd branch'
+# git branch -a
 alias gba='git_cmd branch -a'
+# git branch -d
 alias gbd='git_cmd branch -d'
+# git branch -D
 alias gbD='git_cmd branch -D'
+# git branch --no-merged
 alias gbnm='git_cmd branch --no-merged'
+# git branch --remote
 alias gbr='git_cmd branch --remote'
 
+# git blame -b -w
 alias gbl='git_cmd blame -b -w'
 
+# git bisect
 alias gbs='git_cmd bisect'
+# git bisect bad
 alias gbsb='git_cmd bisect bad'
+# git bisect good
 alias gbsg='git_cmd bisect good'
+# git bisect reset
 alias gbsr='git_cmd bisect reset'
+# git bisect start
 alias gbss='git_cmd bisect start'
 
+# git commit -v
 alias gc='git_cmd commit -v'
+# git commit -v -a
 alias gca='git_cmd commit -v -a'
+# git commit -a -m
 alias gcam='git_cmd commit -a -m'
+# git commit -s -m
 alias gcsm='git_cmd commit -s -m'
+# git commit -a -s
 alias gcas='git_cmd commit -a -s'
+# git commit -a -s -m
 alias gcasm='git_cmd commit -a -s -m'
+# git commit -m
 alias gcmsg='git_cmd commit -m'
+# git commit -S
 alias gcs='git_cmd commit -S'
+# git commit -S -s
 alias gcss='git_cmd commit -S -s'
+# git commit -S -s -m
 alias gcssm='git_cmd commit -S -s -m'
 
+# git config --list
 alias gcf='git_cmd config --list'
 
+# git clone --recurse-submodules
 alias gcl='git_cmd clone --recurse-submodules'
 
+# git shortlog -sn
 alias gcount='git_cmd shortlog -sn'
 
+# git cherry-pick
 alias gcp='git_cmd cherry-pick'
+# git cherry-pick --abord
 alias gcpa='git_cmd cherry-pick --abort'
+# git cherry-pick --continue
 alias gcpc='git_cmd cherry-pick --continue'
 
+# git fetch
 alias gf='git_cmd fetch'
+# git fetch origin
 alias gfo='git_cmd fetch origin'
+# git fetch --all
 alias gfa='git_cmd fetch --all'
+# git fetch --prune
 alias gfprune='git_cmd fetch --prune'
 
+# git ls-files | grep [..]
 alias gfg='git ls-files | grep'
 
 alias gignore='git_cmd update-index --assume-unchanged'
 alias gunignore='git_cmd update-index --no-assume-unchanged'
 alias gignored='git ls-files -v | grep "^[[:lower:]]"'
 
-alias gd='git_cmdgit diff'
+# git diff
+alias gd='git_cmd diff'
+# git diff --cached
 alias gdca='git_cmd diff --cached'
+# git diff --cached --word-diff
 alias gdcw='git_cmd diff --cached --word-diff'
+# git diff --staged
 alias gds='git_cmd diff --staged'
+# git diff @{upstream}
 alias gdup='git_cmd diff @{upstream}'
+# git diff --word-diff
 alias gdw='git_cmd diff --word-diff'
 
 alias gdct='git_cmd describe --tags $(git rev-list --tags --max-count=1)'
 
+# git log --stat
 alias glg='git_cmd log --stat'
+# git log --stat -p
 alias glgp='git_cmd log --stat -p'
+# git log --graph
 alias glgg='git_cmd log --graph'
+# git log --graph --decorate --all
 alias glgga='git_cmd log --graph --decorate --all'
+# git log --graph --max-count=10
 alias glgm='git_cmd log --graph --max-count=10'
+# git log --oneline --decorate
 alias glo='git_cmd log --oneline --decorate'
+# git log --oneline --decorate --graph
 alias glog='git_cmd log --oneline --decorate --graph'
+# git log --oneline --decorate --graph --all
 alias gloga='git_cmd log --oneline --decorate --graph --all'
+# git log --graph (--pretty)
 alias glol="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'"
+# git log --graph (--pretty) --stat
 alias glols="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --stat"
+# git log --graph (--pretty) --all
 alias glola="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset' --all"
+# git log --graph (--pretty)
 alias glod="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset'"
+# git log --graph (--pretty) --date=short
 alias glods="git log --graph --pretty='%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset' --date=short"
 
+# git merge
 alias gm='git_cmd merge'
+# git merge origin/(main branch)
 alias gmom='git_cmd merge origin/$(git_main_branch)'
+# git merge upstream/(main branch)
 alias gmum='git_cmd merge upstream/$(git_main_branch)'
+# git merge --abort
 alias gma='git_cmd merge --abort'
 
 alias gmtl='git_cmd mergetool --no-prompt'
 alias gmtlvim='git_cmd mergetool --no-prompt --tool=vimdiff'
 
+# git push
 alias gp='git_cmd push'
+# git push --dry-run
 alias gpd='git_cmd push --dry-run'
-alias gpoat='git_cmd push origin --all && git push origin --tags'
+# git push upstream
 alias gpu='git_cmd push upstream'
-alias gpv='git_cmd push -v'
 
+# git rebase
 alias grb='git_cmd rebase'
-alias grba='git_cmd rebase --abort'
-alias grbc='git_cmd rebase --continue'
+# git rebase -i
 alias grbi='git_cmd rebase -i'
-alias grbo='git_cmd rebase --onto'
+# git rebase --abort
+alias grba='git_cmd rebase --abort'
+# git rebase --continue
+alias grbc='git_cmd rebase --continue'
+# git rebase --skip
 alias grbs='git_cmd rebase --skip'
 
-alias grev='git_cmd revert'
-
-alias grm='git_cmd rm'
-alias grmc='git_cmd rm --cached'
-
-alias grs='git_cmd restore'
-alias grss='git_cmd restore --source'
-alias grst='git_cmd restore --staged'
-
+# cd to top level of current git repo
 alias grt='cd "$(git rev-parse --show-toplevel || echo .)"'
 
+# git status -sb
 alias gsb='git_cmd status -sb'
+# git status -s
 alias gss='git_cmd status -s'
+# git status
 alias gst='git_cmd status'
 
+# git show
 alias gsh='git_cmd show'
+# git show --pretty=short --show-signature
 alias gsps='git_cmd show --pretty=short --show-signature'
 
+# git submodule init
 alias gsi='git_cmd submodule init'
+# git submodule update
 alias gsu='git_cmd submodule update'
 
+# git switch
 alias gsw='git_cmd switch'
+# git switch -c
 alias gswc='git_cmd switch -c'
+# git switch (main branch)
 alias gswm='git_cmd switch $(git_main_branch)'
 
+# git tag -s
 alias gts='git_cmd tag -s'
 alias gtv='git_cmd tag | sort -V'
 alias gtl='gtl(){ git tag --sort=-v:refname -n -l "${1}*" }; noglob gtl'
