@@ -206,7 +206,7 @@ function git_cmd_help_functions() {
   if [[ "$1" == "-e" ]]; then
     printf "$help"
   else
-    printf "$help" | less
+    printf "$help" | less -R
   fi
 }
 
@@ -231,7 +231,7 @@ function git_cmd_help_helpers() {
   if [[ "$1" == "-e" ]]; then
     printf "$help"
   else
-    printf "$help" | less
+    printf "$help" | less -R
   fi
 }
 
@@ -311,7 +311,7 @@ function git_cmd_help_aliases() {
   if [[ "$1" == "-e" ]]; then
     printf "$help"
   else
-    printf "$help" | less
+    printf "$help" | less -R
   fi
 }
 
