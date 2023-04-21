@@ -605,8 +605,8 @@ function git_find_parent_branch() {
 }
 
 # git_commits_out_of_date
-# git_commits_out_of_date <branch_name>
-# git_commits_out_of_date <branch_name> <parent_branch>
+# git_commits_out_of_date <parent_branch>
+# git_commits_out_of_date <parent_branch> <branch_name>
 #   Return number of commits branch is out of date from parent.
 function git_commits_out_of_date() {
   git_cmd_help $1 && return
@@ -661,18 +661,23 @@ function git_merge_ff() {
     git_cmd_err "missing argument for which branch to merge"
   fi
   local branch_to_merge=$1
+  [[ -z "$branch_to_merge" ]] && return
 
-  if [ $branch_to_merge ]; then
-    local current=$(git branch --show-current)
-    local commits=$(git_commits_out_of_date $current $branch_to_merge)
-
-    if [[ -n "$commits" && "$commits" != 0 ]]; then
-      git_cmd_err "unable to fast-forward merge, $branch_to_merge is out of date by $commits commit(s)"
-      return
-    fi
-
-    git_cmd merge --ff-only $branch_to_merge
+  git update-index --refresh >/dev/null
+  if ! git diff-index --quiet HEAD --; then
+    git_cmd_err "unable to fast-forward merge, you have unstaged changes"
+    return
   fi
+
+  local current=$(git branch --show-current)
+  local commits=$(git_commits_out_of_date $current $branch_to_merge)
+
+  if [[ -n "$commits" && "$commits" != 0 ]]; then
+    git_cmd_err "unable to fast-forward merge, $branch_to_merge is out of date by $commits commit(s)"
+    return
+  fi
+
+  git_cmd merge --ff-only $branch_to_merge
 }
 alias gmff='git_merge_ff'
 
@@ -685,21 +690,26 @@ function git_merge_ff_this() {
   git_cmd_branch_protection_main || return
 
   local branch_to_merge=$(git branch --show-current)
+  [[ -z "$branch_to_merge" ]] && return
 
-  if [ $branch_to_merge ]; then
-    local parent=$(git_find_parent_branch)
-    local remote=$(git config branch.$parent.remote)
-    git pull --rebase $remote $parent:$parent
-
-    local commits=$(git_commits_out_of_date)
-    if [[ -n "$commits" && "$commits" != 0 ]]; then
-      git_cmd_err "unable to fast-forward merge, out of date with $parent by $commits commit(s)"
-      return
-    fi
-
-    git_cmd checkout $parent
-    git_cmd merge --ff-only $branch_to_merge
+  git update-index --refresh >/dev/null
+  if ! git diff-index --quiet HEAD --; then
+    git_cmd_err "unable to fast-forward merge, you have unstaged changes"
+    return
   fi
+
+  local parent=$(git_find_parent_branch)
+  local remote=$(git config branch.$parent.remote)
+  git_cmd fetch $remote $parent:$parent || return
+
+  local commits=$(git_commits_out_of_date)
+  if [[ -n "$commits" && "$commits" != 0 ]]; then
+    git_cmd_err "unable to fast-forward merge, out of date with $parent by $commits commit(s)"
+    return
+  fi
+
+  git_cmd switch $parent
+  git_cmd merge --ff-only $branch_to_merge
 }
 alias gmffthis='git_merge_ff_this'
 
