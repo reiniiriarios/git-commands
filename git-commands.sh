@@ -192,6 +192,7 @@ function git_cmd_help_functions() {
     "git_wip" \
     "git_wip_undo" \
     "git_rename_branch" \
+    "git_backup_branch" \
     "git_tag_push" \
     "git_move_tag" \
     "git_branch_num_commits" \
@@ -1174,6 +1175,21 @@ function git_main_branch() {
   done
   echo master
 }
+
+# git_backup_branch <backup_name>
+# gbb <backup_name>
+#   Backup current branch.
+function git_backup_branch() {
+  if [[ -z "$1" ]]; then
+    git_cmd_err "must supply backup name"
+  fi
+
+  local current=$(git branch --show-current)
+
+  git_cmd checkout -b $1
+  git_cmd switch $current
+}
+alias gbb='git_backup_branch'
 
 #---------------------------- aliases ----------------------------
 
