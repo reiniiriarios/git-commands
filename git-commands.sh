@@ -402,6 +402,57 @@ function git_find_branch() {
   echo $branches
 }
 
+# git_find_local_branch <search_string>
+#   Find branch name by search string.
+function git_find_local_branch() {
+  git_cmd_help $1 && return
+
+  if [ -z $1 ]; then
+    git_cmd_err "missing search string, e.g. ISSUE-1234"
+    return
+  fi
+  local branches=$(git branch --list "*$1*" --format '%(refname:short)')
+  if [ -z "$branches" ]; then
+    git_cmd_err "unable to find branch matching: $1"
+    return
+  fi
+  local num_results=$(echo "$branches" | wc -l | tr -d ' ')
+  if [ $num_results -gt 1 ]; then
+    git_cmd_err "unable to narrow results, $num_results matches"
+    if [ $num_results -lt 11 ]; then
+      printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
+    fi
+    return
+  fi
+  echo $branches
+}
+
+# git_find_remote_branch <search_string>
+#   Find branch name by search string.
+function git_find_remote_branch() {
+  git_cmd_help $1 && return
+
+  if [ -z $1 ]; then
+    git_cmd_err "missing search string, e.g. ISSUE-1234"
+    return
+  fi
+  # lstrip past the remote name
+  local branches=$(git branch -r --list "*$1*" --format '%(refname:lstrip=3)')
+  if [ -z "$branches" ]; then
+    git_cmd_err "unable to find branch matching: $1"
+    return
+  fi
+  local num_results=$(echo "$branches" | wc -l | tr -d ' ')
+  if [ $num_results -gt 1 ]; then
+    git_cmd_err "unable to narrow results, $num_results matches"
+    if [ $num_results -lt 11 ]; then
+      printf "\e[33m$(echo "$branches" | sed 's/^/  /g')\e[0m\n" >&2
+    fi
+    return
+  fi
+  echo $branches
+}
+
 # gswf <search_string>
 # git_switch_branch_by_search <search_string>
 #   Switch branch by search string, if found.
@@ -427,6 +478,37 @@ function git_checkout_branch_by_search() {
   fi
 }
 alias gcof='git_checkout_branch_by_search'
+
+# gbdel <search_string>
+# git_delete_branch_by_search <search_string>
+#   Switch branch by search string, if found.
+function git_delete_branch_by_search() {
+  git_cmd_help $1 && return
+
+  git_cmd_branch_protection $1 || return
+
+  # local branch?
+  local branch=$(git_find_local_branch $1)
+  if [ -n "$branch" ]; then
+    git_cmd_confirm "Are you sure you want to delete branch $branch?" || return
+    local remote=$(git config branch.$branch.remote)
+    git_cmd branch -D $branch
+    # has remote?
+    if [ -n "$remote" ] && git ls-remote $remote --exit-code --heads $branch; then
+      git_cmd_confirm "Do you also want to delete $branch on $remote?" || return
+      git_cmd push $remote --delete $branch
+    fi
+  else
+    # remote branch?
+    local branch=$(git_find_remote_branch $1)
+    if [ -n "$branch" ]; then
+      local remote=$(git config branch.$branch.remote)
+      git_cmd_confirm "Are you sure you want to delete branch $branch on $remote?" || return
+      git_cmd push $remote --delete $branch
+    fi
+  fi
+}
+alias gbdel='git_delete_branch_by_search'
 
 # git_find_parent_branch
 # git_find_parent_branch [-a] <branch_name>
