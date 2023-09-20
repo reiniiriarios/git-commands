@@ -462,6 +462,17 @@ function git_switch_branch_by_search() {
   local branch=$(git_find_branch $1)
   if [ -n "$branch" ]; then
     git_cmd switch $branch
+
+    # git has info printed for this, but this makes it more obvious
+    local behind=$(git_commits_behind)
+    if [ -n "$behind" ]; then
+      printf "\e[33m$behind commits behind remote\e[0m\n"
+    else
+      local ahead=$(git_commits_ahead)
+      if [ -n "$ahead" ]; then
+        printf "\e[33m$ahead commits ahead of remote\e[0m\n"
+      fi
+    fi
   fi
 }
 alias gswf='git_switch_branch_by_search'
