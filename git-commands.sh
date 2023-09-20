@@ -713,6 +713,10 @@ function git_commits_out_of_date() {
     local parent=$1
   else
     local parent=$(git_find_parent_branch $check_branch)
+    if [ -z $parent ]; then
+      false
+      return
+    fi
   fi
 
   if [[ "$check_branch" == "$parent" ]]; then
@@ -792,6 +796,10 @@ function git_merge_ff_this() {
   fi
 
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local remote=$(git config branch.$parent.remote)
   git_cmd fetch $remote $parent:$parent || return
 
@@ -848,6 +856,10 @@ function git_rebase_branch() {
   git_cmd_branch_protection || return
   
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local commits=$(git rev-list --count HEAD ^$parent)
   if [ "$commits" -lt "1" ]; then
     git_cmd_err "no commits to rebase"
@@ -873,6 +885,10 @@ function git_squash_branch() {
 
   # count commits in branch
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local commits=$(git rev-list --count HEAD ^$parent)
   if [ "$commits" -lt "2" ]; then
     git_cmd_err "no commits to squash"
@@ -912,6 +928,10 @@ function git_drop_drop_commits() {
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local commits=$(git rev-list --count HEAD ^$parent)
   if [ "$commits" -lt "1" ]; then
     git_cmd_err "no commits to rebase"
@@ -941,6 +961,10 @@ function git_reset_branch() {
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local commits=$(git rev-list --count HEAD ^$parent)
 
   if [ "$commits" -lt "1" ]; then
@@ -1017,6 +1041,10 @@ function git_rebase_forward() {
   git_cmd_branch_protection || return
 
   local parent=$(git_find_parent_branch)
+  if [ -z $parent ]; then
+    false
+    return
+  fi
   local remote=$(git config branch.$parent.remote)
   git_cmd pull --rebase $remote $parent:$parent
   git_cmd rebase $remote/$parent
