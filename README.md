@@ -47,6 +47,7 @@ Alias|Function|Description
 `gbrebase`|`git_rebase_branch`|`rebase -i` all commits on the current branch
 `gbsquash`|`git_squash_branch`|squash all commits on current branch via `rebase -i`
 `gbreset`|`git_reset_branch`|soft reset all commits and unstage changes on current branch
+`gbdel`|`git_delete_branch_by_search`|delete branch by search string, e.g. `gswf 1234` if branch name has issue number
 `gremotereset`|`git_remote_reset`|reset branch to remote
 `gbcount`|`git_branch_num_commits`|display number of commits on current branch
 `gfp`|`git_force_push`|`push --force-with-lease` with branch protection

@@ -185,6 +185,7 @@ function git_cmd_help_functions() {
     "git_drop_drop_commits" \
     "git_merge_ff" \
     "git_merge_ff_this" \
+    "git_delete_branch_by_search" \
     "git_reset" \
     "git_reset_branch" \
     "git_drop_last" \
@@ -496,25 +497,25 @@ alias gcof='git_checkout_branch_by_search'
 function git_delete_branch_by_search() {
   git_cmd_help $1 && return
 
-  git_cmd_branch_protection $1 || return
-
   # local branch?
   local branch=$(git_find_local_branch $1)
   if [ -n "$branch" ]; then
-    git_cmd_confirm "Are you sure you want to delete branch $branch?" || return
+    git_cmd_branch_protection $branch || return
+    git_cmd_confirm "Delete branch \e[34m$branch\e[33m?" || return
     local remote=$(git config branch.$branch.remote)
     git_cmd branch -D $branch
     # has remote?
     if [ -n "$remote" ] && git ls-remote $remote --exit-code --heads $branch; then
-      git_cmd_confirm "Do you also want to delete $branch on $remote?" || return
+      git_cmd_confirm "Also delete \e[34m$branch\e[33m on \e[34m$remote\e[33m?" || return
       git_cmd push $remote --delete $branch
     fi
   else
     # remote branch?
     local branch=$(git_find_remote_branch $1)
     if [ -n "$branch" ]; then
+      git_cmd_branch_protection $branch || return
       local remote=$(git config branch.$branch.remote)
-      git_cmd_confirm "Are you sure you want to delete branch $branch on $remote?" || return
+      git_cmd_confirm "Delete branch \e[34m$branch\e[33m on \e[34m$remote\e[33m?" || return
       git_cmd push $remote --delete $branch
     fi
   fi
