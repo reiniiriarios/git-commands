@@ -1331,6 +1331,8 @@ alias gbb='git_backup_branch'
 alias gt='git tag'
 # git pull --rebase
 alias gl='git_cmd pull --rebase'
+# git fetch origin --tags --force
+alias gtffetch='git_cmd fetch origin --tags --force'
 
 # git add
 alias ga='git_cmd add'
