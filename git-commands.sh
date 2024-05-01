@@ -815,6 +815,27 @@ function git_merge_ff_this() {
 }
 alias gmffthis='git_merge_ff_this'
 
+# gdevup
+# git_update_dev_to_main
+#   Bring dev branch up to date with main if it's not branched off.
+function git_update_dev_to_main() {
+  git_cmd_help $1 && return
+
+  local main=$(git_main_branch)
+  local dev=$(git_develop_branch)
+  local remote=$(git config branch.$dev.remote)
+
+  git_cmd switch $main || return
+  git_cmd pull --rebase $remote || return
+
+  git_cmd switch $dev || return
+  git_cmd pull --rebase $remote || return
+
+  git_cmd merge --ff-only $main || return
+  git_cmd push $remote
+}
+alias gdevup='git_update_dev_to_main'
+
 # grbn <n>
 # git_rebase_n_commits <n>
 #   Rebase interactively `n` commits back from HEAD.
