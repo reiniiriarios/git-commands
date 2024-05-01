@@ -1250,7 +1250,7 @@ function git_develop_branch() {
     return
   fi
 
-  echo ${branches[1]}
+  echo ${branches[0]}
 }
 
 # grename <new_branch_name>
