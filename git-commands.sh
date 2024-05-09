@@ -1150,7 +1150,7 @@ function git_wip() {
   git_cmd_help $1 && return
 
   git_cmd add -A
-  git_cmd commit --no-verify -m "WIP"
+  git_cmd -c commit.gpgsign=false commit --no-verify -m "WIP"
 }
 alias gwip='git_wip'
 
